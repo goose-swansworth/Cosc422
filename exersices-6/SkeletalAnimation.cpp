@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <GL/freeglut.h>
+#include <glm/glm.hpp>
 using namespace std;
 
 #include <assimp/cimport.h>
@@ -16,12 +17,24 @@ using namespace std;
 #include <assimp/postprocess.h>
 #include "assimp_extras.h"
 
+#include "camera.h"
+#include "models.h"
+
 #define SEC_MS 1000
+#define WINDOW_WIDTH 1200
+#define WINDOW_HEIGHT 900
 
 //----------Globals----------------------------
 const aiScene* scene = NULL;
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
+
+Camera viewer(glm::vec3(0, 0, 7));
+glm::vec2 mouse_last;
+
+void print_vec(glm::vec3 v) {
+    cout << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")" << endl;
+}
 
 // ------A recursive function to traverse scene graph and render each mesh----------
 // Simplified version for rendering a skeleton mesh
@@ -101,7 +114,7 @@ void updateNodeMatrices(int tick)
 
 void update(int tick) {
 	unsigned int tDuration = scene->mAnimations[0]->mDuration;
-	unsigned int timeStep = SEC_MS / scene->mAnimations[0]->mTicksPerSecond / 8;
+	unsigned int timeStep = SEC_MS / scene->mAnimations[0]->mTicksPerSecond;
 	if (tick > tDuration) {
 		tick = 0;
 	}
@@ -129,11 +142,13 @@ void initialise()
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glMatrixMode(GL_PROJECTION);
+	glEnable(GL_MULTISAMPLE);
+    glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	glLoadIdentity();
-	gluPerspective(40, 1, 1.0, 500.0);
+	gluPerspective(40, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/Boxing.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../more_bvh/86/86_10.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -160,27 +175,72 @@ void display()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(0, 0, 7, 0, 0, 0, 0, 1, 0);
+	glm::vec3 look = viewer.position + viewer.fowards;
+	gluLookAt(viewer.position.x, viewer.position.y, viewer.position.z, look.x, look.y, look.z, 0, 1, 0);
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosn);
 
-	glPushMatrix();
-	   glScalef(scene_scale, scene_scale, scene_scale);
-	   glTranslatef(-xpos, 0, -zpos);   //Move model to origin
-	   render(scene->mRootNode);
-	glPopMatrix();
+	// glPushMatrix();
+	//    glScalef(scene_scale, scene_scale, scene_scale);
+	//    glTranslatef(-xpos, 0, -zpos);   //Move model to origin
+	//    render(scene->mRootNode);
+	// glPopMatrix();
+
+	ball_joint_1(3);
 
 	glutSwapBuffers();
 }
 
+void keyboard_handler(unsigned char key, int x, int y) {
+	glm::vec3 dir(0.0);
+	switch (key) {
+		case 'w':
+			dir.x = 1;
+			break;
+		case 's':
+			dir.x = -1;
+			break;
+		case 'a':
+			dir.z = -1;
+			break;
+		case 'd':
+			dir.z = 1;
+			break;
+		case ' ':
+			dir.y = 1;
+			break;
+		case 'z':
+			dir.y = -1;
+			break;
+		case 'q':
+			exit(0);
+			break;
+	}
+	viewer.move(dir);
+	glutPostRedisplay();
+}
+
+
+void mouse_handler(int x, int y) {
+	float screen_x = (2 * (float)x - WINDOW_WIDTH) / WINDOW_WIDTH;
+    float screen_y = (2 * (float)y - WINDOW_HEIGHT) / WINDOW_HEIGHT;
+	glm::vec2 mouse(screen_x, screen_y);
+	viewer.update(mouse, mouse_last);
+	mouse_last = mouse;
+	glutPostRedisplay();
+}
 
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(800, 800);
+	glutSetOption(GLUT_MULTISAMPLE, 8);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 	glutCreateWindow("Skeleton Animation");
+	//glutSetCursor(GLUT_CURSOR_NONE);
 	initialise();
-	glutTimerFunc(0, update, 0);
+	//glutTimerFunc(0, update, 0);
+	glutKeyboardFunc(keyboard_handler);
+	glutPassiveMotionFunc(mouse_handler);
 	glutDisplayFunc(display);
 	glutMainLoop();
 }

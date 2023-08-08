@@ -153,6 +153,30 @@ SkeletalAnimation.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ex6.out.dir/build.make CMakeFiles/ex6.out.dir/SkeletalAnimation.cpp.s
 .PHONY : SkeletalAnimation.cpp.s
 
+models.o: models.cpp.o
+.PHONY : models.o
+
+# target to build an object file
+models.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ex6.out.dir/build.make CMakeFiles/ex6.out.dir/models.cpp.o
+.PHONY : models.cpp.o
+
+models.i: models.cpp.i
+.PHONY : models.i
+
+# target to preprocess a source file
+models.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ex6.out.dir/build.make CMakeFiles/ex6.out.dir/models.cpp.i
+.PHONY : models.cpp.i
+
+models.s: models.cpp.s
+.PHONY : models.s
+
+# target to generate assembly for a file
+models.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ex6.out.dir/build.make CMakeFiles/ex6.out.dir/models.cpp.s
+.PHONY : models.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -165,6 +189,9 @@ help:
 	@echo "... SkeletalAnimation.o"
 	@echo "... SkeletalAnimation.i"
 	@echo "... SkeletalAnimation.s"
+	@echo "... models.o"
+	@echo "... models.i"
+	@echo "... models.s"
 .PHONY : help
 
 

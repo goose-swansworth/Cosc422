@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(ex6)
 
-add_executable(ex6.out SkeletalAnimation.cpp assimp_extras.h)
+add_executable(ex6.out SkeletalAnimation.cpp models.cpp assimp_extras.h)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)

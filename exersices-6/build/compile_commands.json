@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/SkeletalAnimation.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/exersices-6/SkeletalAnimation.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/SkeletalAnimation.cpp"
+},
+{
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/models.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/exersices-6/models.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/models.cpp"
+}
+]
