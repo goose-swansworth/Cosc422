@@ -108,7 +108,7 @@ CHANNELS 3 Zrotation Xrotation Yrotation
 							{
 OFFSET 0 -3.217370 -0.000000
 CHANNELS 3 Zrotation Xrotation Yrotation
-								JOINT lhand
+								JOINT 
 								{
 									OFFSET 0 0 0
 CHANNELS 3 Zrotation Xrotation Yrotation

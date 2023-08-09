@@ -39,31 +39,50 @@ void print_vec(glm::vec3 v) {
 bool replace_links(aiString name) {
 	float r = 1;
 	if (name == aiString("Chest")) {
+		r = 2.75;
 		glPushMatrix();
+			glTranslatef(0, r/2, 0);
 			ball_joint_1(r);
 		glPopMatrix();
 		return true;
 	} else if (name == aiString("lowerback")) {
 		glPushMatrix();
-			ball_joint_1(r);
+			glTranslatef(0, -0.05, 0);
+			ball_joint_2(1.1);
+		glPopMatrix();
+		return true;
+	}  else if (name == aiString("Head")) {
+		glPushMatrix();
+			ball_joint_1(1.5);
 		glPopMatrix();
 		return true;
 	} else if (name == aiString("LeftShoulder") || name == aiString("RightShoulder")) {
+		shoulder();
+		return true;
+	} else if (name == aiString("RightHip")) {
+		rightHip();
+		return true;
+	}  else if (name == aiString("LeftHip")) {
+		leftHip();
+		return true;
+	} else if (name == aiString("LeftKnee")) {
+		leftKnee();
+		return true;
+	}  else if (name == aiString("RightKnee")) {
+		rightKnee();
+		return true;
+	}  else if (name == aiString("LeftElbow") || name == aiString("RightElbow")) {
+		elbow();
+		return true;
+	} else if (name == aiString("lhand") || name == aiString("rhand")) {
 		glPushMatrix();
-			ball_joint_1(r);
-		glPopMatrix();
-		return false;
-	} else if (name == aiString("RightHip") || name == aiString("LeftHip")) {
-		glPushMatrix();
-			ball_joint_1(r);
+			ball_joint_1(0.8);
 		glPopMatrix();
 		return true;
-	} else if (name == aiString("LeftKnee") || name == aiString("RightKnee")) {
-		glPushMatrix();
-			ball_joint_1(r);
-		glPopMatrix();
-		return false;
-	} 
+	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
+		return true;
+	}
+	return false; 
 }
 
 // ------A recursive function to traverse scene graph and render each mesh----------
@@ -120,8 +139,8 @@ void updateNodeMatrices(int tick)
 	aiAnimation* anim;   //Animation object
 	aiMatrix4x4 T, R;  //Position, rotation, product matrices
 	aiMatrix3x3 matRot3;
-	aiVector3D postion;
-	aiQuaternion rotation;
+	aiVector3D pos;
+	aiQuaternion rot;
 	aiNode* node;
 
 	anim = scene->mAnimations[0];
@@ -131,13 +150,18 @@ void updateNodeMatrices(int tick)
 		aiNodeAnim* channel = anim->mChannels[i];      //Channel
 
 		if (channel->mNumPositionKeys == 1) {
-			postion = channel->mPositionKeys[0].mValue;
+			pos = channel->mPositionKeys[0].mValue;
 		} else {
-			postion = channel->mPositionKeys[tick].mValue;
+			pos = channel->mPositionKeys[tick].mValue;
 		}
-		rotation = channel->mRotationKeys[tick].mValue;
-		T.Translation(postion, T);
-		matRot3 = rotation.GetMatrix();
+		if (channel->mNumRotationKeys == 1) {
+			rot = channel->mRotationKeys[0].mValue;
+		} else {
+			rot = channel->mRotationKeys[tick].mValue;
+		}
+		
+		T.Translation(pos, T);
+		matRot3 = rot.GetMatrix();
 		R = aiMatrix4x4(matRot3);
 		
 		node = scene->mRootNode->FindNode(channel->mNodeName);
@@ -181,7 +205,7 @@ void initialise()
 	gluPerspective(40, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/jump_spin_kick.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/90_08.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -214,7 +238,7 @@ void display()
 
 	glPushMatrix();
 	   glScalef(scene_scale, scene_scale, scene_scale);
-	   glTranslatef(-xpos, 0, -zpos);   //Move model to origin
+	   //glTranslatef(-xpos, 0, -zpos);   //Move model to origin
 	   render(scene->mRootNode);
 	glPopMatrix();
 
@@ -270,7 +294,7 @@ int main(int argc, char** argv)
 	glutCreateWindow("Skeleton Animation");
 	//glutSetCursor(GLUT_CURSOR_NONE);
 	initialise();
-	glutTimerFunc(0, update, 0);
+	//glutTimerFunc(0, update, 0);
 	glutKeyboardFunc(keyboard_handler);
 	glutPassiveMotionFunc(mouse_handler);
 	glutDisplayFunc(display);
