@@ -10,7 +10,7 @@
 void hemisphere(float r, int p, int q) {
     int i, j;
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glColor3f(0.0, 1.0, 0.0);
+    glColor3f(1, 172.0 / 255, 28.0 / 255);
 
     // Array of latitudinal triangle strips, each parallel to the equator, stacked one
     // above the other from the equator to the north pole.
@@ -44,6 +44,6 @@ void ball_joint_1(float r) {
     hemisphere(r, 50, 200);
     gluSphere(q, 0.9 * r, 50, 50);
     glRotatef(90, 1, 0, 0);
-    gluDisk(q, 0, 3, 50, 50);
+    gluDisk(q, 0, r, 50, 50);
 
 }

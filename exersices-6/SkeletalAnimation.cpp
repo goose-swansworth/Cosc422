@@ -36,6 +36,36 @@ void print_vec(glm::vec3 v) {
     cout << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")" << endl;
 }
 
+bool replace_links(aiString name) {
+	float r = 1;
+	if (name == aiString("Chest")) {
+		glPushMatrix();
+			ball_joint_1(r);
+		glPopMatrix();
+		return true;
+	} else if (name == aiString("lowerback")) {
+		glPushMatrix();
+			ball_joint_1(r);
+		glPopMatrix();
+		return true;
+	} else if (name == aiString("LeftShoulder") || name == aiString("RightShoulder")) {
+		glPushMatrix();
+			ball_joint_1(r);
+		glPopMatrix();
+		return false;
+	} else if (name == aiString("RightHip") || name == aiString("LeftHip")) {
+		glPushMatrix();
+			ball_joint_1(r);
+		glPopMatrix();
+		return true;
+	} else if (name == aiString("LeftKnee") || name == aiString("RightKnee")) {
+		glPushMatrix();
+			ball_joint_1(r);
+		glPopMatrix();
+		return false;
+	} 
+}
+
 // ------A recursive function to traverse scene graph and render each mesh----------
 // Simplified version for rendering a skeleton mesh
 void render(const aiNode* node)
@@ -52,24 +82,27 @@ void render(const aiNode* node)
 
 	//The scene graph for a skeleton contains at most one mesh per node
 	//Skeleton meshes are always triangle meshes
-	if(node->mNumMeshes > 0)
-	{
-		meshIndex = node->mMeshes[0];          //Get the mesh indices from the current node
-		mesh = scene->mMeshes[meshIndex];    //Using mesh index, get the mesh object
-		glColor4fv(materialCol);   //Default material colour
+	if(node->mNumMeshes > 0) {
 
-		//Draw the mesh in the current node
-		for (int k = 0; k < mesh->mNumFaces; k++)
-		{
-			face = &mesh->mFaces[k];
-			glBegin(GL_TRIANGLES);
-			for (int i = 0; i < face->mNumIndices; i++) {
-				int vertexIndex = face->mIndices[i];
-				if (mesh->HasNormals())
-					glNormal3fv(&mesh->mNormals[vertexIndex].x);
-				glVertex3fv(&mesh->mVertices[vertexIndex].x);
+		if (!replace_links(node->mName)) {
+
+			meshIndex = node->mMeshes[0];          //Get the mesh indices from the current node
+			mesh = scene->mMeshes[meshIndex];    //Using mesh index, get the mesh object
+			glColor4fv(materialCol);   //Default material colour
+
+			//Draw the mesh in the current node
+			for (int k = 0; k < mesh->mNumFaces; k++)
+			{
+				face = &mesh->mFaces[k];
+				glBegin(GL_TRIANGLES);
+				for (int i = 0; i < face->mNumIndices; i++) {
+					int vertexIndex = face->mIndices[i];
+					if (mesh->HasNormals())
+						glNormal3fv(&mesh->mNormals[vertexIndex].x);
+					glVertex3fv(&mesh->mVertices[vertexIndex].x);
+				}
+				glEnd();
 			}
-			glEnd();
 		}
 	}
 
@@ -148,7 +181,7 @@ void initialise()
 	gluPerspective(40, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
 
 	//---- Load the model ------
-	scene = aiImportFile("../more_bvh/86/86_10.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/jump_spin_kick.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -179,13 +212,12 @@ void display()
 	gluLookAt(viewer.position.x, viewer.position.y, viewer.position.z, look.x, look.y, look.z, 0, 1, 0);
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosn);
 
-	// glPushMatrix();
-	//    glScalef(scene_scale, scene_scale, scene_scale);
-	//    glTranslatef(-xpos, 0, -zpos);   //Move model to origin
-	//    render(scene->mRootNode);
-	// glPopMatrix();
+	glPushMatrix();
+	   glScalef(scene_scale, scene_scale, scene_scale);
+	   glTranslatef(-xpos, 0, -zpos);   //Move model to origin
+	   render(scene->mRootNode);
+	glPopMatrix();
 
-	ball_joint_1(3);
 
 	glutSwapBuffers();
 }
@@ -238,7 +270,7 @@ int main(int argc, char** argv)
 	glutCreateWindow("Skeleton Animation");
 	//glutSetCursor(GLUT_CURSOR_NONE);
 	initialise();
-	//glutTimerFunc(0, update, 0);
+	glutTimerFunc(0, update, 0);
 	glutKeyboardFunc(keyboard_handler);
 	glutPassiveMotionFunc(mouse_handler);
 	glutDisplayFunc(display);
