@@ -20,9 +20,9 @@ using namespace std;
 #include "camera.h"
 #include "models.h"
 
-#define SEC_MS 1000
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 900
+#define SEC_MS 1000
 
 //----------Globals----------------------------
 const aiScene* scene = NULL;
@@ -66,10 +66,10 @@ bool replace_links(aiString name) {
 		leftHip();
 		return true;
 	} else if (name == aiString("LeftKnee")) {
-		leftKnee();
+		knee(true);
 		return true;
 	}  else if (name == aiString("RightKnee")) {
-		rightKnee();
+		knee(false);
 		return true;
 	}  else if (name == aiString("LeftElbow") || name == aiString("RightElbow")) {
 		elbow();
@@ -80,6 +80,14 @@ bool replace_links(aiString name) {
 		glPopMatrix();
 		return true;
 	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
+		return true;
+	} else if (name == aiString("RightAnkle")) {
+		foot(1.5, false);
+		return true;
+	} else if (name == aiString("LeftAnkle")) {
+		foot(1.5, true);
+		return true;
+	} else if (name == aiString("RightToe") || name == aiString("LeftToe")) {
 		return true;
 	}
 	return false; 
@@ -128,6 +136,7 @@ void render(const aiNode* node)
 	// Recursively draw all children of the current node
 	for (int i = 0; i < node->mNumChildren; i++)
 		render(node->mChildren[i]);
+		
 
 	glPopMatrix();
 }
@@ -202,10 +211,10 @@ void initialise()
 	glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	glLoadIdentity();
-	gluPerspective(40, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
+	gluPerspective(70, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/90_08.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/87_05.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -294,7 +303,7 @@ int main(int argc, char** argv)
 	glutCreateWindow("Skeleton Animation");
 	//glutSetCursor(GLUT_CURSOR_NONE);
 	initialise();
-	//glutTimerFunc(0, update, 0);
+	glutTimerFunc(0, update, 0);
 	glutKeyboardFunc(keyboard_handler);
 	glutPassiveMotionFunc(mouse_handler);
 	glutDisplayFunc(display);

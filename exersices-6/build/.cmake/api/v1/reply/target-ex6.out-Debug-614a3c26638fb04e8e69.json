@@ -11,16 +11,11 @@
 		"commands" : 
 		[
 			"add_executable",
-			"target_link_libraries",
-			"set_target_properties",
-			"include",
-			"find_package"
+			"target_link_libraries"
 		],
 		"files" : 
 		[
-			"CMakeLists.txt",
-			"/usr/lib/cmake/assimp-5.2/assimpTargets.cmake",
-			"/usr/lib/cmake/assimp-5.2/assimpConfig.cmake"
+			"CMakeLists.txt"
 		],
 		"nodes" : 
 		[
@@ -38,32 +33,6 @@
 				"file" : 0,
 				"line" : 14,
 				"parent" : 0
-			},
-			{
-				"command" : 4,
-				"file" : 0,
-				"line" : 10,
-				"parent" : 0
-			},
-			{
-				"file" : 2,
-				"parent" : 3
-			},
-			{
-				"command" : 3,
-				"file" : 2,
-				"line" : 37,
-				"parent" : 4
-			},
-			{
-				"file" : 1,
-				"parent" : 5
-			},
-			{
-				"command" : 2,
-				"file" : 1,
-				"line" : 70,
-				"parent" : 6
 			}
 		]
 	},
@@ -99,52 +68,53 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libOpenGL.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libOpenGL.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libGLX.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libGLX.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libGLU.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libGLU.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libglut.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libglut.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libXmu.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libXi.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libXi.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libIL.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/libIL.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libassimp.so.5.2.0",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 2,
-				"fragment" : "/usr/lib/libassimp.so.5.2.4",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libz.so",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 7,
-				"fragment" : "/usr/lib/libz.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libdraco.so.4.0.0",
 				"role" : "libraries"
 			},
 			{
-				"backtrace" : 7,
-				"fragment" : "/usr/lib/librt.a",
+				"fragment" : "-lminizip",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/usr/lib/x86_64-linux-gnu/librt.a",
 				"role" : "libraries"
 			}
 		],
