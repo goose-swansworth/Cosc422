@@ -19,6 +19,7 @@ using namespace std;
 
 #include "camera.h"
 #include "models.h"
+#include "stb_image.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 900
@@ -29,6 +30,7 @@ const aiScene* scene = NULL;
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
 
+
 Camera viewer(glm::vec3(0, 0, 7));
 glm::vec2 mouse_last;
 
@@ -36,25 +38,18 @@ void print_vec(glm::vec3 v) {
     cout << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")" << endl;
 }
 
+
+
 bool replace_links(aiString name) {
 	float r = 1;
 	if (name == aiString("Chest")) {
-		r = 2.75;
-		glPushMatrix();
-			glTranslatef(0, r/2, 0);
-			ball_joint_1(r);
-		glPopMatrix();
+		chest();
 		return true;
 	} else if (name == aiString("lowerback")) {
-		glPushMatrix();
-			glTranslatef(0, -0.05, 0);
-			ball_joint_2(1.1);
-		glPopMatrix();
+		middle();
 		return true;
 	}  else if (name == aiString("Head")) {
-		glPushMatrix();
-			ball_joint_1(1.5);
-		glPopMatrix();
+		head();
 		return true;
 	} else if (name == aiString("LeftShoulder") || name == aiString("RightShoulder")) {
 		shoulder();
@@ -211,10 +206,12 @@ void initialise()
 	glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	glLoadIdentity();
-	gluPerspective(70, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 1.0, 500.0);
+	gluPerspective(70, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 0.2, 500.0);
+
+	loadTextures();
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/87_05.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/88_01.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -251,6 +248,7 @@ void display()
 	   render(scene->mRootNode);
 	glPopMatrix();
 
+	enviroment();
 
 	glutSwapBuffers();
 }

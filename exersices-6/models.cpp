@@ -1,14 +1,24 @@
 
 #include "models.h"
+#include "loadTGA.h"
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <cmath>
+#include <iostream>
 
 #define PI M_PI
+#define GRAY_METAL 0
+#define GREEN_METAL0 1
+#define GREEN_METAL1 2
+#define GREEN_METAL2 3
+#define RUSTY_METAL 4
+#define ENV 5
 
 static GLUquadric* q = gluNewQuadric();
 static const float kneeRadius = 1.25;
 static const float hipRadius = 1.3;
+GLuint textureIds[6];
+
 
 glm::vec3 rgbHexToVec(int hexcode) {
     glm::vec3 color(0);
@@ -19,6 +29,62 @@ glm::vec3 rgbHexToVec(int hexcode) {
     color.y = (float)((hexcode & g_mask) >> 8) / 255;
     color.z = (float)(hexcode & b_mask) / 255;
     return color;
+}
+
+void enviroment() {
+    glColor3f(1.0, 1.0, 1.0);
+    glDisable(GL_LIGHTING);
+    glBindTexture(GL_TEXTURE_2D, textureIds[ENV]);
+    glRotatef(180, 0, 1, 0);
+    glRotatef(-90, 1, 0, 0);
+    gluSphere(q, 100, 25, 25);
+    glEnable(GL_LIGHTING);
+}
+
+void loadTextures() {
+    glGenTextures(6, textureIds);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
+    loadTGA("../gray_metal.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL0]);
+    loadTGA("../green_metal0.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL1]);
+    loadTGA("../green_metal1.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL2]);
+    loadTGA("../green_metal2.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[RUSTY_METAL]);
+    loadTGA("../rusty_metal.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[ENV]);
+    loadTGA("../env.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 
@@ -51,9 +117,11 @@ void hemisphere(float r, int p, int q) {
                 glm::vec3 sphere_pt_next(r*cos(phi_next)*cos(theta), r*sin(phi_next), r*cos(phi_next)*sin(theta));
 
                 glmNormal(sphere_pt_next);
+                glTexCoord2f(theta / (2 * PI), phi_next / PI);
                 glmVertex(sphere_pt_next);
 
                 glmNormal(sphere_pt);
+                glTexCoord2f(theta / (2 * PI), phi / PI);
                 glmVertex(sphere_pt);  
             }
         glEnd();
@@ -61,9 +129,7 @@ void hemisphere(float r, int p, int q) {
 }
 
 void ball_joint_1(float r) {
-    glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
-    //GLUquadric* q = gluNewQuadric();
-    glColor3f(green.x, green.y, green.z);
+    //glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
     hemisphere(r, 50, 150);
     gluSphere(q, 0.9 * r, 25, 25);
     glRotatef(90, 1, 0, 0);
@@ -72,10 +138,7 @@ void ball_joint_1(float r) {
 }
 
 void ball_joint_2(float r) {
-    glm::vec3 gray = rgbHexToVec(0x696969);
-    glColor3f(gray.x, gray.y, gray.z);
     gluSphere(q, r, 25, 25);
-
     glRotatef(90, 0, 1, 0);
     glPushMatrix();
         glTranslatef(0, 0, r);
@@ -84,69 +147,112 @@ void ball_joint_2(float r) {
     glTranslatef(0, 0, -r);
     gluCylinder(q, r/2, r/2, 2*r, 25, 25);
     gluDisk(q, 0, r/2, 25, 25);
+}
 
+void chest() {
+    float r = 2.75;
+    glColor3f(1.0, 1.0, 1.0);
+    glPushMatrix();
+        glTranslatef(0, r/2, 0);
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL0]);
+        ball_joint_1(r);
+    glPopMatrix();
+}
 
+void middle() {
+    glColor3f(1.0, 1.0, 1.0);
+    glPushMatrix();
+        glTranslatef(0, -0.05, 0);
+        glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
+        ball_joint_2(1.1);
+    glPopMatrix();
+}
+
+void head() {
+    glColor3f(1.0, 1.0, 1.0);
+    glPushMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL2]);
+        ball_joint_1(1.5);
+    glPopMatrix();
 }
 
 
 void knee(bool left) {
-    glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         glRotatef(left ? -20 : 20, 0, 0, -1);
         glPushMatrix();
-            glColor3f(green.x, green.y, green.z);
             glRotatef(90, 1, 0, 0);
+            glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
             gluCylinder(q, hipRadius/2.25, hipRadius/2.25, 6.5, 25, 25);
         glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL1]);
         ball_joint_2(kneeRadius);
 	glPopMatrix();
 }
 
 void leftHip() {
     glm::vec3 gray = rgbHexToVec(0x696969);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    gluQuadricTexture(q, GL_TRUE);
+    glEnable(GL_TEXTURE_2D);
+
+    
+    glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         glRotatef(-20, 0, 0, -1);
         glPushMatrix();
-            glColor3f(gray.x, gray.y, gray.z);
             glRotatef(90, 1, 0, 0);
+            glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
             gluCylinder(q, hipRadius/2, hipRadius/2, 7, 25, 25);
         glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL0]);
         ball_joint_1(hipRadius);
 	glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
 }
 
 void rightHip() {
-    glm::vec3 gray = rgbHexToVec(0x696969);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    gluQuadricTexture(q, GL_TRUE);
+    glEnable(GL_TEXTURE_2D);
+
+    glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         glRotatef(20, 0, 0, -1);
         glPushMatrix();
-            glColor3f(gray.x, gray.y, gray.z);
             glRotatef(90, 1, 0, 0);
+            glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
             gluCylinder(q, hipRadius/2, hipRadius/2, 7, 25, 25);
         glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL1]);
         ball_joint_1(hipRadius);
 	glPopMatrix();
 }
 
 void shoulder() {
-    glm::vec3 gray = rgbHexToVec(0x696969);
-    glColor3f(gray.x, gray.y, gray.z);
+    glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         float r = 1.5;
         glPushMatrix();
             glRotatef(90, 1, 0, 0);
+            glBindTexture(GL_TEXTURE_2D, textureIds[GRAY_METAL]);
             gluCylinder(q, 0.5, 0.5, 4.5, 25, 25);
         glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL1]);
         ball_joint_1(r);
 	glPopMatrix();
 }
 
 void elbow() {
-    glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
-    glColor3f(green.x, green.y, green.z);
+    glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         glPushMatrix();
             glRotatef(90, 1, 0, 0);
+            glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL2]);
             gluCylinder(q, 0.5, 0.5, 3.75, 25, 25);
         glPopMatrix();
 		ball_joint_2(1);
@@ -154,14 +260,12 @@ void elbow() {
 }
 
 void foot(float r, bool left) {
-    glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
-    glColor3f(green.x, green.y, green.z);
     float c_r = 0.4 * r;
     float angle;
     glPushMatrix();
         angle = left ? -20 : 20;
         glRotatef(angle, 0, 0, -1);
-
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL0]);
         hemisphere(r, 50, 150);
         glRotatef(90, 1, 0, 0);
         gluDisk(q, 0, r, 25, 25);
@@ -177,6 +281,7 @@ void foot(float r, bool left) {
             gluDisk(q, 0, c_r, 25, 25);
         glPopMatrix();
         glTranslatef(0, 0, -r);
+        glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL1]);
         gluCylinder(q, c_r, c_r, 2*r, 25, 25);
        
     glPopMatrix();

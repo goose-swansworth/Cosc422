@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ex6.out::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ex6.out-Debug-614a3c26638fb04e8e69.json",
+					"jsonFile" : "target-ex6.out-Debug-2c1a54fd84bb8c8219ed.json",
 					"name" : "ex6.out",
 					"projectIndex" : 0
 				}
@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/csse/users/kjr106/Desktop/Cosc422/exersices-6/build",
-		"source" : "/csse/users/kjr106/Desktop/Cosc422/exersices-6"
+		"build" : "/home/l0ng4rm5/Programming/Cosc422/exersices-6/build",
+		"source" : "/home/l0ng4rm5/Programming/Cosc422/exersices-6"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 3
+		"minor" : 5
 	}
 }

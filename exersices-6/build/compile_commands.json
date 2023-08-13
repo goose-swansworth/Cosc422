@@ -1,12 +1,26 @@
 [
 {
-  "directory": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/SkeletalAnimation.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/exersices-6/SkeletalAnimation.cpp",
-  "file": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/SkeletalAnimation.cpp"
+  "directory": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/SkeletalAnimation.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/exersices-6/SkeletalAnimation.cpp",
+  "file": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/SkeletalAnimation.cpp",
+  "output": "CMakeFiles/ex6.out.dir/SkeletalAnimation.cpp.o"
 },
 {
-  "directory": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/models.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/exersices-6/models.cpp",
-  "file": "/csse/users/kjr106/Desktop/Cosc422/exersices-6/models.cpp"
+  "directory": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/models.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/exersices-6/models.cpp",
+  "file": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/models.cpp",
+  "output": "CMakeFiles/ex6.out.dir/models.cpp.o"
+},
+{
+  "directory": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/loadTGA.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/exersices-6/loadTGA.cpp",
+  "file": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/loadTGA.cpp",
+  "output": "CMakeFiles/ex6.out.dir/loadTGA.cpp.o"
+},
+{
+  "directory": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/ex6.out.dir/stb.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/exersices-6/stb.cpp",
+  "file": "/home/l0ng4rm5/Programming/Cosc422/exersices-6/stb.cpp",
+  "output": "CMakeFiles/ex6.out.dir/stb.cpp.o"
 }
 ]
