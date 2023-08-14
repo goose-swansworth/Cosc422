@@ -70,7 +70,15 @@ bool replace_links(aiString name) {
 	}  else if (name == aiString("LeftElbow") || name == aiString("RightElbow")) {
 		elbow();
 		return true;
-	} else if (name == aiString("lhand") || name == aiString("rhand")) {
+	} else if (name == aiString("lhand")) {
+		hand();
+		glPushMatrix();
+			glScalef(15, 15, 15);
+			glRotatef(45, 1, 0, 0);
+			renderModel(models[0].scene->mRootNode, &models[0]);
+		glPopMatrix();
+		return true;
+	} else if (name == aiString("rhand")) {
 		hand();
 		return true;
 	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
@@ -179,11 +187,12 @@ void updateNodeMatrices(int tick)
 void update(int tick) {
 	unsigned int tDuration = scene->mAnimations[0]->mDuration;
 	unsigned int timeStep = SEC_MS / scene->mAnimations[0]->mTicksPerSecond;
+	cout << timeStep << "\n";
 	if (tick > tDuration) {
 		tick = 0;
 	}
 	updateNodeMatrices(tick);
-	tick++;
+	tick+=2;
 	glutTimerFunc(timeStep, update, tick);
 	glutPostRedisplay();
 	
@@ -213,8 +222,12 @@ void initialise()
 
 	loadTextures();
 
+	loadModel("../models/Bat/BaseballBat.obj", &models[0]);
+	loadGLTextures(&models[0]);
+
+
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/88_06.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/124_07.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
@@ -250,6 +263,9 @@ void display()
 	   //glTranslatef(-xpos, 0, -zpos);   //Move model to origin
 	   render(scene->mRootNode, false);
 	glPopMatrix();
+
+	
+
 	floorPlane(32, 4);
 	enviroment();
 

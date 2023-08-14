@@ -1,5 +1,5 @@
 #include "model_loader.h"
-#include "assimp_extras.h"
+//#include "assimp_extras.h"
 
 
 bool loadModel(const char* fileName, Model* model) {
@@ -14,10 +14,10 @@ bool loadModel(const char* fileName, Model* model) {
 	//printTreeInfo(scene->mRootNode);
 	//printBoneInfo(scene);
 	//printAnimInfo(scene);  //WARNING:  This may generate a lengthy output if the model has animation data
-	get_bounding_box(model->scene, &scene_min, &scene_max);
-	model->scene_center = (scene_min + scene_max) * 0.5f;
-	scene_diag = scene_max - model->scene_center;  //diagonal vector
-	model->scene_scale = 1.0 / scene_diag.Length();
+	// get_bounding_box(model->scene, &scene_min, &scene_max);
+	// model->scene_center = (scene_min + scene_max) * 0.5f;
+	// scene_diag = scene_max - model->scene_center;  //diagonal vector
+	// model->scene_scale = 1.0 / scene_diag.Length();
 	return true;
 }
 
