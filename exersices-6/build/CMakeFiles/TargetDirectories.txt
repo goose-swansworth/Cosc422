@@ -1,3 +1,0 @@
-/home/l0ng4rm5/Programming/Cosc422/exersices-6/build/CMakeFiles/ex6.out.dir
-/home/l0ng4rm5/Programming/Cosc422/exersices-6/build/CMakeFiles/edit_cache.dir
-/home/l0ng4rm5/Programming/Cosc422/exersices-6/build/CMakeFiles/rebuild_cache.dir
