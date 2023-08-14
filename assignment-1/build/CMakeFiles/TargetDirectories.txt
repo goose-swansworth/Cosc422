@@ -1,0 +1,3 @@
+/csse/users/kjr106/Desktop/Cosc422/assignment-1/build/CMakeFiles/main.out.dir
+/csse/users/kjr106/Desktop/Cosc422/assignment-1/build/CMakeFiles/edit_cache.dir
+/csse/users/kjr106/Desktop/Cosc422/assignment-1/build/CMakeFiles/rebuild_cache.dir
