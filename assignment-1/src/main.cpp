@@ -19,7 +19,7 @@ using namespace std;
 
 #include "camera.h"
 #include "models.h"
-#include "stb_image.h"
+#include "model_loader.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 900
@@ -27,6 +27,7 @@ using namespace std;
 
 //----------Globals----------------------------
 const aiScene* scene = NULL;
+Model models[2];
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
 
@@ -213,7 +214,7 @@ void initialise()
 	loadTextures();
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/89_04.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	scene = aiImportFile("../bvh/88_06.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
