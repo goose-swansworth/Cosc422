@@ -21,6 +21,6 @@ struct Model {
 
 bool loadModel(const char* fileName, Model* model);
 void loadGLTextures(Model* model);
-void renderModel(const aiNode* node, Model* model);
+void renderModel(const aiNode* node, Model* model, bool overideColor);
 
 #endif

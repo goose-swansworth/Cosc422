@@ -207,7 +207,7 @@ void head() {
     glColor3f(1.0, 1.0, 1.0);
     glPushMatrix();
         glBindTexture(GL_TEXTURE_2D, textureIds[GREEN_METAL2]);
-        ball_joint_1(1.5);
+        ball_joint_1(1.75);
     glPopMatrix();
 }
 

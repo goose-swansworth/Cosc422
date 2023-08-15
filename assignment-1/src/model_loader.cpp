@@ -1,6 +1,7 @@
 #include "model_loader.h"
 //#include "assimp_extras.h"
 
+using namespace std;
 
 bool loadModel(const char* fileName, Model* model) {
 	aiVector3D scene_min, scene_max, scene_diag;
@@ -73,7 +74,7 @@ void loadGLTextures(Model* model)
 
 }
 
-void renderModel(const aiNode* node, Model* model)
+void renderModel(const aiNode* node, Model* model, bool overideColor)
 {
 	const aiScene* scene = model->scene;
 	aiMatrix4x4 m = node->mTransformation;
@@ -100,6 +101,10 @@ void renderModel(const aiNode* node, Model* model)
 		if (AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))  //Get material colour from model
 		{
 			glColor4f(diffuse.r, diffuse.g, diffuse.b, 1.0);
+		}
+
+		if (overideColor) {
+			glColor3f(1, 0.3, 0.3);
 		}
 
 
@@ -142,7 +147,7 @@ void renderModel(const aiNode* node, Model* model)
 
 	// Draw all children
 	for (int i = 0; i < node->mNumChildren; i++)
-		renderModel(node->mChildren[i], model);
+		renderModel(node->mChildren[i], model, overideColor);
 
 	glPopMatrix();
 }

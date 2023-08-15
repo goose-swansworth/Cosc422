@@ -20,16 +20,23 @@ using namespace std;
 #include "camera.h"
 #include "models.h"
 #include "model_loader.h"
+#include "charater.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 900
 #define SEC_MS 1000
 
+
 //----------Globals----------------------------
-const aiScene* scene = NULL;
+//const aiScene* scene = NULL;
 Model models[2];
+Charater charaters[2];
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
+
+float xrot, yrot, zrot = 0;
+
+int tPitch = 643;
 
 
 Camera viewer(glm::vec3(0, 0, 7));
@@ -40,116 +47,13 @@ void print_vec(glm::vec3 v) {
 }
 
 
-
-bool replace_links(aiString name) {
-	float r = 1;
-	if (name == aiString("Chest")) {
-		chest();
-		return true;
-	} else if (name == aiString("lowerback")) {
-		middle();
-		return true;
-	}  else if (name == aiString("Head")) {
-		head();
-		return true;
-	} else if (name == aiString("LeftShoulder") || name == aiString("RightShoulder")) {
-		shoulder();
-		return true;
-	} else if (name == aiString("RightHip")) {
-		rightHip();
-		return true;
-	}  else if (name == aiString("LeftHip")) {
-		leftHip();
-		return true;
-	} else if (name == aiString("LeftKnee")) {
-		knee(true);
-		return true;
-	}  else if (name == aiString("RightKnee")) {
-		knee(false);
-		return true;
-	}  else if (name == aiString("LeftElbow") || name == aiString("RightElbow")) {
-		elbow();
-		return true;
-	} else if (name == aiString("lhand")) {
-		hand();
-		glPushMatrix();
-			glScalef(15, 15, 15);
-			glRotatef(45, 1, 0, 0);
-			renderModel(models[0].scene->mRootNode, &models[0]);
-		glPopMatrix();
-		return true;
-	} else if (name == aiString("rhand")) {
-		hand();
-		return true;
-	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
-		return true;
-	} else if (name == aiString("RightAnkle")) {
-		foot(1.5, false);
-		return true;
-	} else if (name == aiString("LeftAnkle")) {
-		foot(1.5, true);
-		return true;
-	} else if (name == aiString("RightToe") || name == aiString("LeftToe")) {
-		return true;
-	}
-	return false; 
-}
-
 // ------A recursive function to traverse scene graph and render each mesh----------
 // Simplified version for rendering a skeleton mesh
-void render(const aiNode* node, bool links)
-{
-	aiMatrix4x4 m = node->mTransformation;
-	aiMesh* mesh;
-	aiFace* face;
-	float materialCol[4] = { 1, 0, 1, 1 };
-	int meshIndex;
 
-	m.Transpose();   //Convert to column-major order
-	glPushMatrix();
-	glMultMatrixf((float*)&m);   //Multiply by the transformation matrix for this node
-
-	//The scene graph for a skeleton contains at most one mesh per node
-	//Skeleton meshes are always triangle meshes
-	
-
-	if(node->mNumMeshes > 0 && links) {
-
-		if (!replace_links(node->mName)) {
-
-			meshIndex = node->mMeshes[0];          //Get the mesh indices from the current node
-			mesh = scene->mMeshes[meshIndex];    //Using mesh index, get the mesh object
-			glColor4fv(materialCol);   //Default material colour
-
-			//Draw the mesh in the current node
-			for (int k = 0; k < mesh->mNumFaces; k++)
-			{
-				face = &mesh->mFaces[k];
-				glBegin(GL_TRIANGLES);
-				for (int i = 0; i < face->mNumIndices; i++) {
-					int vertexIndex = face->mIndices[i];
-					if (mesh->HasNormals())
-						glNormal3fv(&mesh->mNormals[vertexIndex].x);
-					glVertex3fv(&mesh->mVertices[vertexIndex].x);
-				}
-				glEnd();
-			}
-		}
-	} else {
-		replace_links(node->mName);
-	}
-
-	// Recursively draw all children of the current node
-	for (int i = 0; i < node->mNumChildren; i++)
-		render(node->mChildren[i], links);
-		
-
-	glPopMatrix();
-}
 
 //----- Function to update node matrices for each tick ------
 // Complete this function
-void updateNodeMatrices(int tick)
+void updateNodeMatrices(int tick, Charater charater)
 {
 	aiAnimation* anim;   //Animation object
 	aiMatrix4x4 T, R;  //Position, rotation, product matrices
@@ -158,7 +62,7 @@ void updateNodeMatrices(int tick)
 	aiQuaternion rot;
 	aiNode* node;
 
-	anim = scene->mAnimations[0];
+	anim = charater.scene->mAnimations[0];
 	for (int i = 0; i < anim->mNumChannels; i++) {
 		T = aiMatrix4x4();   //Identity
 		R = aiMatrix4x4();
@@ -179,22 +83,32 @@ void updateNodeMatrices(int tick)
 		matRot3 = rot.GetMatrix();
 		R = aiMatrix4x4(matRot3);
 		
-		node = scene->mRootNode->FindNode(channel->mNodeName);
+		node = charater.scene->mRootNode->FindNode(channel->mNodeName);
 		node->mTransformation = T * R;
 	}
 }
 
-void update(int tick) {
-	unsigned int tDuration = scene->mAnimations[0]->mDuration;
-	unsigned int timeStep = SEC_MS / scene->mAnimations[0]->mTicksPerSecond;
-	cout << timeStep << "\n";
-	if (tick > tDuration) {
-		tick = 0;
+void update(int value) {
+	unsigned int timeStep = SEC_MS / charaters[0].scene->mAnimations[0]->mTicksPerSecond;
+	unsigned int tDuration;
+	for (int i = 0; i < 2; i++) {
+		const aiScene* scene = charaters[i].scene;
+		if (i == 0) {
+			tDuration = scene->mAnimations[i]->mDuration;
+		} else {
+			tDuration = tPitch;
+		}
+		//timeStep += SEC_MS / charaters[i].scene->mAnimations[i]->mTicksPerSecond;
+		if (charaters[i].tick > tDuration) {
+			charaters[i].tick = 0;
+		}
+		updateNodeMatrices(charaters[i].tick, charaters[i]);
+		charaters[i].tick += charaters[i].tickStep;
 	}
-	updateNodeMatrices(tick);
-	tick+=2;
-	glutTimerFunc(timeStep, update, tick);
 	glutPostRedisplay();
+	glutTimerFunc(1, update, 0);
+	
+	
 	
 }
 
@@ -218,24 +132,34 @@ void initialise()
 	glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	glLoadIdentity();
-	gluPerspective(70, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 0.2, 500.0);
+	gluPerspective(80, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 0.2, 500.0);
 
 	loadTextures();
 
 	loadModel("../models/Bat/BaseballBat.obj", &models[0]);
 	loadGLTextures(&models[0]);
 
+	loadModel("../models/baseball_helmet.glb", &models[1]);
+
 
 	//---- Load the model ------
-	scene = aiImportFile("../bvh/124_07.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
-	if (scene == NULL) {
+	charaters[0].scene = aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	if (charaters[0].scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
 	}
+
+	charaters[1].scene = aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	if (charaters[1].scene == NULL) {
+		cout << "bvh file not found.\n";
+		exit(1);
+	}
+	charaters[0].tickStep = 3;
+	charaters[1].tickStep = 3;
 	//printTreeInfo(scene->mRootNode);
 	//printAnimInfo(scene, 0);
 
-	get_bounding_box(scene, &scene_min, &scene_max);
+	get_bounding_box(charaters[0].scene, &scene_min, &scene_max);
 	scene_center = (scene_min + scene_max) * 0.5f;
 	aiVector3D scene_diag = scene_max - scene_center;
 	scene_scale = 1.0 / scene_diag.Length();
@@ -246,10 +170,10 @@ void initialise()
 void display()
 {
 	float lightPosn[4] = { -5, 10, 10, 1 };
-	aiMatrix4x4 m = scene->mRootNode->mTransformation;
-	float xpos = m.a4;   //Root joint's position in world space
-	float ypos = m.b4;
-	float zpos = m.c4;
+	// aiMatrix4x4 m = scene->mRootNode->mTransformation;
+	// float xpos = m.a4;   //Root joint's position in world space
+	// float ypos = m.b4;
+	// float zpos = m.c4;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
@@ -261,7 +185,9 @@ void display()
 	glPushMatrix();
 	   glScalef(scene_scale, scene_scale, scene_scale);
 	   //glTranslatef(-xpos, 0, -zpos);   //Move model to origin
-	   render(scene->mRootNode, false);
+	   renderCharater(charaters[0].scene->mRootNode, charaters[0], models);
+	   glTranslatef(20, 0, 0);
+	   renderCharater(charaters[1].scene->mRootNode, charaters[1], models);
 	glPopMatrix();
 
 	
@@ -290,11 +216,23 @@ void keyboard_handler(unsigned char key, int x, int y) {
 		case ' ':
 			dir.y = 1;
 			break;
-		case 'z':
+		case 'u':
 			dir.y = -1;
 			break;
 		case 'q':
 			exit(0);
+			break;
+		case 'z':
+			xrot += 1;
+			cout << xrot << ", " << yrot << ", " << zrot << "\n";
+			break;
+		case 'x':
+			yrot += 1;
+			cout << xrot << ", " << yrot << ", " << zrot << "\n";
+			break;
+		case 'v':
+			zrot += 1;
+			cout << xrot << ", " << yrot << ", " << zrot << "\n";
 			break;
 	}
 	viewer.move(dir);

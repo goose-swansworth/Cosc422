@@ -5,7 +5,7 @@ Kd 0.992157 0.992157 0.992157
 Ks 0.9 0.9 0.9
 d 1
 Ns 10
-map_Kd ../Bat/bbbat2_d.png
+map_Kd ../models/Bat/bbbat2_d.png
 
 
 newmtl Material.000055
@@ -14,5 +14,5 @@ Kd 1 1 1
 Ks 0.898039 0.898039 0.898039
 d 1
 Ns 10
-map_Kd ../Bat/bbbatst_d.png
+map_Kd ../models/Bat/bbbatst_d.png
 
