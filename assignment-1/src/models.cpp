@@ -14,11 +14,12 @@
 #define RUSTY_METAL 4
 #define ENV 5
 #define FLOOR 6
+#define WOOD 7
 
 static GLUquadric* q = gluNewQuadric();
 static const float kneeRadius = 1.25;
 static const float hipRadius = 1.3;
-GLuint textureIds[7];
+GLuint textureIds[8];
 
 
 glm::vec3 rgbHexToVec(int hexcode) {
@@ -93,6 +94,13 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, textureIds[WOOD]);
+    loadTGA("../textures/wood.tga");
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 
@@ -128,6 +136,20 @@ void floorPlane(int width, int tileWidth) {
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_TEXTURE_2D);
+}
+
+void platform(float r, float h, glm::vec3 pos) {
+    glBindTexture(GL_TEXTURE_2D, textureIds[WOOD]);
+    glPushMatrix();
+    glTranslatef(pos.x, pos.y, pos.z);
+    glTranslatef(0, h, 0);
+    glRotatef(90, 1, 0, 0);
+    gluCylinder(q, r, r, h, 40, 40);
+        glPushMatrix();
+            glRotatef(180, 1, 0, 0);
+            gluDisk(q, 0, r, 40, 40);
+        glPopMatrix();
+    glPopMatrix();
 }
 
 

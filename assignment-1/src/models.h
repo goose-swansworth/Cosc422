@@ -17,6 +17,7 @@ void head();
 void hand();
 void foot(float r, bool left);
 void enviroment();
+void platform(float r, float h, glm::vec3 pos);
 void floorPlane(int width, int tileWidth);
 void loadTextures();
 

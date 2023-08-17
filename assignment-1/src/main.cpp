@@ -26,13 +26,16 @@ using namespace std;
 #define WINDOW_HEIGHT 900
 #define SEC_MS 1000
 
+#define N_CHARATERS 2
+
 
 //----------Globals----------------------------
 //const aiScene* scene = NULL;
-Model models[2];
+Model models[4];
 Charater charaters[2];
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
+float platform_height = 0.15;
 
 float xrot, yrot, zrot = 0;
 
@@ -46,6 +49,16 @@ void print_vec(glm::vec3 v) {
     cout << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")" << endl;
 }
 
+
+aiVector3D get_join_location(Charater charater, aiString name) {
+    aiVector3D P = aiVector3D(0, 0, 0);
+    aiNode* node = charater.scene->mRootNode->FindNode(name);
+    do {
+        P *= node->mTransformation;
+        node = node->mParent;
+    } while (node->mParent != NULL);
+    return P;
+}
 
 // ------A recursive function to traverse scene graph and render each mesh----------
 // Simplified version for rendering a skeleton mesh
@@ -141,19 +154,42 @@ void initialise()
 
 	loadModel("../models/baseball_helmet.glb", &models[1]);
 
+    loadModel("../models/Hat/Accesorios 14.obj", &models[2]);
+    loadGLTextures(&models[2]);
+
+    loadModel("../models/Ball/bbl_Ball.obj", &models[3]);
+    loadGLTextures(&models[3]);
+
+
+    charaters[0] = init_charater(
+            aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
+            glm::vec3(0, 0, -50),
+            0,
+            glm::vec3(0, 1, 0),
+            0
+    );
+
+    charaters[1] = init_charater(
+            aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
+            glm::vec3(10, 0, 50),
+            180,
+            glm::vec3(0, 1, 0),
+            1
+    );
 
 	//---- Load the model ------
-	charaters[0].scene = aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	//charaters[0].scene = aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (charaters[0].scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
 	}
 
-	charaters[1].scene = aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
+	//charaters[1].scene = aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone);
 	if (charaters[1].scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
 	}
+
 	charaters[0].tickStep = 3;
 	charaters[1].tickStep = 3;
 	//printTreeInfo(scene->mRootNode);
@@ -180,20 +216,36 @@ void display()
 	glLoadIdentity();
 	glm::vec3 look = viewer.position + viewer.fowards;
 	gluLookAt(viewer.position.x, viewer.position.y, viewer.position.z, look.x, look.y, look.z, 0, 1, 0);
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosn);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosn);
 
 	glPushMatrix();
-	   glScalef(scene_scale, scene_scale, scene_scale);
-	   //glTranslatef(-xpos, 0, -zpos);   //Move model to origin
-	   renderCharater(charaters[0].scene->mRootNode, charaters[0], models);
-	   glTranslatef(20, 0, 0);
-	   renderCharater(charaters[1].scene->mRootNode, charaters[1], models);
-	glPopMatrix();
+    glScalef(scene_scale, scene_scale, scene_scale); // Scale the scene to the charaters
+    glTranslatef(0, (platform_height - 0.055) / scene_scale, 0);
+    // Render the charaters
+    glm::vec3 pos, axis;
+    for (int i = 0; i < N_CHARATERS; i++) {
+        pos = charaters[i].position;
+        axis = charaters[i].axis;
+        glPushMatrix();
+            glTranslatef(pos.x, pos.y, pos.z);
+            glRotatef(charaters[i].angle, axis.x, axis.y, axis.z);
+            renderCharater(charaters[i].scene->mRootNode, charaters[i], models);
+        glPopMatrix();
+	}
+    glPopMatrix();
 
-	
 
+
+    // Render the enviorment models
+    glm::vec3 offset(8.8, yrot, zrot);
+    glm::vec3 offset1(7.6, yrot, 1);
+    platform(1, platform_height, (charaters[0].position + offset) * scene_scale);
+    platform(1, platform_height, (charaters[1].position - offset1) * scene_scale);
 	floorPlane(32, 4);
 	enviroment();
+
+    aiVector3D hand = get_join_location(charaters[0], aiString("lhand"));
+    print_vec(glm::vec3(hand.x, hand.y, hand.z));
 
 	glutSwapBuffers();
 }
@@ -223,15 +275,15 @@ void keyboard_handler(unsigned char key, int x, int y) {
 			exit(0);
 			break;
 		case 'z':
-			xrot += 1;
+            xrot += 0.2;
 			cout << xrot << ", " << yrot << ", " << zrot << "\n";
 			break;
 		case 'x':
-			yrot += 1;
+            yrot += 0.2;
 			cout << xrot << ", " << yrot << ", " << zrot << "\n";
 			break;
-		case 'v':
-			zrot += 1;
+        case 'c':
+            zrot += 0.2;
 			cout << xrot << ", " << yrot << ", " << zrot << "\n";
 			break;
 	}

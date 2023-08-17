@@ -1,7 +1,17 @@
 
 #include "charater.h"
 
-bool replace_links(aiString name, Model models[]) {
+Charater init_charater(const aiScene* scene, glm::vec3 position, float angle, glm::vec3 axis, int code) {
+    Charater charater;
+    charater.scene = scene;
+    charater.position = position;
+    charater.angle = angle;
+    charater.axis = axis;
+    charater.code = code;
+    return charater;
+}
+
+bool replace_links(aiString name, Model models[], int charater) {
 	float r = 1;
 	if (name == aiString("Chest")) {
 		chest();
@@ -11,12 +21,19 @@ bool replace_links(aiString name, Model models[]) {
 		return true;
 	}  else if (name == aiString("Head")) {
 		head();
-		glDisable(GL_TEXTURE_2D);
-		glTranslatef(0, 0.25, -2);
-		glRotatef(45, 1, 0, 0);
-		glScalef(0.11, 0.11, 0.11);
-		renderModel(models[1].scene->mRootNode, &models[1], true);
-		glEnable(GL_TEXTURE_2D);
+        if (charater == 0) {
+            glDisable(GL_TEXTURE_2D);
+            glTranslatef(0, 0.25, -2);
+            glRotatef(45, 1, 0, 0);
+            glScalef(0.11, 0.11, 0.11);
+            renderModel(models[1].scene->mRootNode, &models[1], true);
+            glEnable(GL_TEXTURE_2D);
+        } else {
+            glRotatef(-45, 1, 0, 0);
+            glScalef(1.5, 1.5, 1.5);
+            renderModel(models[2].scene->mRootNode, &models[2], false);
+        }
+
 		return true;
 	} else if (name == aiString("LeftShoulder") || name == aiString("RightShoulder")) {
 		shoulder();
@@ -38,15 +55,21 @@ bool replace_links(aiString name, Model models[]) {
 		return true;
 	} else if (name == aiString("lhand")) {
 		hand();
-		glPushMatrix();
-			glScalef(15, 15, 15);
-			glRotatef(70, 1, 0, 0);
-			glRotatef(25, 0, 1, 0);
-			renderModel(models[0].scene->mRootNode, &models[0], false);
-		glPopMatrix();
+        if (charater == 0) {
+            glPushMatrix();
+                glScalef(15, 15, 15);
+                glRotatef(70, 1, 0, 0);
+                glRotatef(25, 0, 1, 0);
+                renderModel(models[0].scene->mRootNode, &models[0], false);
+            glPopMatrix();
+        }
 		return true;
 	} else if (name == aiString("rhand")) {
 		hand();
+        if (charater == 1) {
+            glTranslatef(0, -1, 1);
+            renderModel(models[3].scene->mRootNode, &models[3], false);
+        }
 		return true;
 	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
 		return true;
@@ -103,7 +126,7 @@ void renderCharater(const aiNode* node, Charater charater, Model models[])
 			}
 		}
 	} else {
-		replace_links(node->mName, models);
+        replace_links(node->mName, models, charater.code);
 	}
 
 	// Recursively draw all children of the current node
