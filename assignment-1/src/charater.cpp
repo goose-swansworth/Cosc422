@@ -66,10 +66,10 @@ bool replace_links(aiString name, Model models[], int charater) {
 		return true;
 	} else if (name == aiString("rhand")) {
 		hand();
-        if (charater == 1) {
-            glTranslatef(0, -1, 1);
-            renderModel(models[3].scene->mRootNode, &models[3], false);
-        }
+        // if (charater == 1) {
+        //     glTranslatef(0, -1, 1);
+        //     renderModel(models[3].scene->mRootNode, &models[3], false);
+        // }
 		return true;
 	} else if (name == aiString("LHipJoint") || name == aiString("RHipJoint")) {
 		return true;

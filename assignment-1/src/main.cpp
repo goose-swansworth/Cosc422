@@ -9,6 +9,7 @@
 #include <fstream>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
+
 using namespace std;
 
 #include <assimp/cimport.h>
@@ -40,7 +41,7 @@ float platform_height = 0.15;
 float xrot, yrot, zrot = 0;
 
 int tPitch = 643;
-
+float pitch_step = 0;
 
 Camera viewer(glm::vec3(0, 0, 7));
 glm::vec2 mouse_last;
@@ -50,14 +51,15 @@ void print_vec(glm::vec3 v) {
 }
 
 
-aiVector3D get_join_location(Charater charater, aiString name) {
+glm::vec3 get_join_location(Charater charater, aiString name) {
     aiVector3D P = aiVector3D(0, 0, 0);
     aiNode* node = charater.scene->mRootNode->FindNode(name);
-    do {
+    while (node->mParent != NULL) {
         P *= node->mTransformation;
         node = node->mParent;
-    } while (node->mParent != NULL);
-    return P;
+	}
+	P *= node->mTransformation;
+    return glm::vec3(P.x, P.y, P.z);
 }
 
 // ------A recursive function to traverse scene graph and render each mesh----------
@@ -66,7 +68,7 @@ aiVector3D get_join_location(Charater charater, aiString name) {
 
 //----- Function to update node matrices for each tick ------
 // Complete this function
-void updateNodeMatrices(int tick, Charater charater)
+void updateNodeMatrices(int tick, Charater* charater)
 {
 	aiAnimation* anim;   //Animation object
 	aiMatrix4x4 T, R;  //Position, rotation, product matrices
@@ -75,7 +77,7 @@ void updateNodeMatrices(int tick, Charater charater)
 	aiQuaternion rot;
 	aiNode* node;
 
-	anim = charater.scene->mAnimations[0];
+	anim = charater->scene->mAnimations[0];
 	for (int i = 0; i < anim->mNumChannels; i++) {
 		T = aiMatrix4x4();   //Identity
 		R = aiMatrix4x4();
@@ -96,7 +98,7 @@ void updateNodeMatrices(int tick, Charater charater)
 		matRot3 = rot.GetMatrix();
 		R = aiMatrix4x4(matRot3);
 		
-		node = charater.scene->mRootNode->FindNode(channel->mNodeName);
+		node = charater->scene->mRootNode->FindNode(channel->mNodeName);
 		node->mTransformation = T * R;
 	}
 }
@@ -115,8 +117,12 @@ void update(int value) {
 		if (charaters[i].tick > tDuration) {
 			charaters[i].tick = 0;
 		}
-		updateNodeMatrices(charaters[i].tick, charaters[i]);
+		updateNodeMatrices(charaters[i].tick, &charaters[i]);
 		charaters[i].tick += charaters[i].tickStep;
+	}
+	pitch_step += 0.01;
+	if (pitch_step >= 1.0) {
+		pitch_step = 0;
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1, update, 0);
@@ -221,7 +227,7 @@ void display()
 	glPushMatrix();
     glScalef(scene_scale, scene_scale, scene_scale); // Scale the scene to the charaters
     glTranslatef(0, (platform_height - 0.055) / scene_scale, 0);
-    // Render the charaters
+    //Render the charaters
     glm::vec3 pos, axis;
     for (int i = 0; i < N_CHARATERS; i++) {
         pos = charaters[i].position;
@@ -230,11 +236,45 @@ void display()
             glTranslatef(pos.x, pos.y, pos.z);
             glRotatef(charaters[i].angle, axis.x, axis.y, axis.z);
             renderCharater(charaters[i].scene->mRootNode, charaters[i], models);
+
+
+
         glPopMatrix();
 	}
+	
+	// Render the baseball
+	
+	axis = charaters[1].axis;
+	pos = charaters[1].position;
+	float angle = charaters[1].angle;
+	glm::vec3 src_pos = get_join_location(charaters[1], aiString("rhand"));
+	glm::vec3 dest_pos = get_join_location(charaters[0], aiString("lhand")) + charaters[0].position;
+	
+
+	//src_pos = glm::vec3((glm::rotate(angle, axis) * glm::vec4(src_pos, 0.0)) + glm::vec4(pos, 1.0));
+
+	
+	glm::vec3 t = glm::mix(glm::vec3(src_pos), dest_pos, pitch_step);
+	
+	
+	
+	glPushMatrix();
+
+		glTranslatef(pos.x, pos.y, pos.z);
+		glRotatef(angle, axis.x, axis.y, axis.z);
+		glTranslatef(src_pos.x, src_pos.y, src_pos.z);
+		renderModel(models[3].scene->mRootNode, &models[3], false);
+
+	glPopMatrix();
+
+
+	glTranslatef(dest_pos.x, dest_pos.y, dest_pos.z);
+	glutSolidCube(2);
+
+
     glPopMatrix();
 
-
+	
 
     // Render the enviorment models
     glm::vec3 offset(8.8, yrot, zrot);
@@ -244,8 +284,7 @@ void display()
 	floorPlane(32, 4);
 	enviroment();
 
-    aiVector3D hand = get_join_location(charaters[0], aiString("lhand"));
-    print_vec(glm::vec3(hand.x, hand.y, hand.z));
+    
 
 	glutSwapBuffers();
 }
