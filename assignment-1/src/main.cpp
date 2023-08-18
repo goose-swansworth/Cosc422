@@ -28,6 +28,8 @@ using namespace std;
 #define SEC_MS 1000
 
 #define N_CHARATERS 2
+#define HITTER 0
+#define PITCHER 1
 
 
 //----------Globals----------------------------
@@ -43,6 +45,12 @@ float xrot, yrot, zrot = 0;
 int tPitch = 643;
 float pitch_step = 0;
 
+static bool thrown = false;
+static glm::vec3 src_pos;
+static glm::vec3 dest_pos;
+const unsigned int firstHit = 324;
+const unsigned int secondHit = 1011;
+const unsigned int pitchTime = 438;
 Camera viewer(glm::vec3(0, 0, 7));
 glm::vec2 mouse_last;
 
@@ -105,24 +113,37 @@ void updateNodeMatrices(int tick, Charater* charater)
 
 void update(int value) {
 	unsigned int timeStep = SEC_MS / charaters[0].scene->mAnimations[0]->mTicksPerSecond;
-	unsigned int tDuration;
-	for (int i = 0; i < 2; i++) {
-		const aiScene* scene = charaters[i].scene;
-		if (i == 0) {
-			tDuration = scene->mAnimations[i]->mDuration;
-		} else {
-			tDuration = tPitch;
-		}
-		//timeStep += SEC_MS / charaters[i].scene->mAnimations[i]->mTicksPerSecond;
-		if (charaters[i].tick > tDuration) {
-			charaters[i].tick = 0;
-		}
-		updateNodeMatrices(charaters[i].tick, &charaters[i]);
-		charaters[i].tick += charaters[i].tickStep;
+	unsigned int hitDur = charaters[0].scene->mAnimations[0]->mDuration;
+	unsigned int pitchDur = tPitch;
+	
+
+	if (charaters[HITTER].tick < pitchDur) {
+		charaters[HITTER].tick += charaters[HITTER].tickStep;
+	} else {
+		charaters[HITTER].tick = 0;
 	}
-	pitch_step += 0.01;
-	if (pitch_step >= 1.0) {
+
+	if (charaters[HITTER].tick <= firstHit) {
+		float t = (float)charaters[HITTER].tick / firstHit;
+		charaters[PITCHER].tick = (int)(pitchTime * t);
+	} else {
+		float t = (float)(charaters[HITTER].tick - firstHit) / (secondHit - firstHit);
+		charaters[PITCHER].tick = (int)(pitchTime + pitchTime*t) % pitchDur;
+	}
+
+	if (charaters[PITCHER].tick >= pitchTime) {
+		thrown = true;
+		pitch_step += 0.1;
+		pitch_step = glm::clamp(pitch_step, 0.0f, 1.0f);
+	}
+
+	if (charaters[HITTER].tick % pitchDur < 1) {
+		thrown = false;
 		pitch_step = 0;
+	} 
+
+	for (int i = 0; i < N_CHARATERS; i++) {
+		updateNodeMatrices(charaters[i].tick, &charaters[i]);
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1, update, 0);
@@ -169,7 +190,7 @@ void initialise()
 
     charaters[0] = init_charater(
             aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
-            glm::vec3(0, 0, -50),
+            glm::vec3(0, 0, -70),
             0,
             glm::vec3(0, 1, 0),
             0
@@ -177,7 +198,7 @@ void initialise()
 
     charaters[1] = init_charater(
             aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
-            glm::vec3(10, 0, 50),
+            glm::vec3(10, 0, 70),
             180,
             glm::vec3(0, 1, 0),
             1
@@ -236,9 +257,6 @@ void display()
             glTranslatef(pos.x, pos.y, pos.z);
             glRotatef(charaters[i].angle, axis.x, axis.y, axis.z);
             renderCharater(charaters[i].scene->mRootNode, charaters[i], models);
-
-
-
         glPopMatrix();
 	}
 	
@@ -246,31 +264,27 @@ void display()
 	
 	axis = charaters[1].axis;
 	pos = charaters[1].position;
-	float angle = charaters[1].angle;
-	glm::vec3 src_pos = get_join_location(charaters[1], aiString("rhand"));
-	glm::vec3 dest_pos = get_join_location(charaters[0], aiString("lhand")) + charaters[0].position;
+	float angle = charaters[1].angle; 
 	
 
-	//src_pos = glm::vec3((glm::rotate(angle, axis) * glm::vec4(src_pos, 0.0)) + glm::vec4(pos, 1.0));
-
-	
-	glm::vec3 t = glm::mix(glm::vec3(src_pos), dest_pos, pitch_step);
-	
-	
-	
 	glPushMatrix();
-
-		glTranslatef(pos.x, pos.y, pos.z);
-		glRotatef(angle, axis.x, axis.y, axis.z);
-		glTranslatef(src_pos.x, src_pos.y, src_pos.z);
-		renderModel(models[3].scene->mRootNode, &models[3], false);
-
+		if (!thrown) {
+			src_pos = get_join_location(charaters[1], aiString("rhand"));
+			glTranslatef(pos.x, pos.y, pos.z);
+			glRotatef(angle, axis.x, axis.y, axis.z);
+			glTranslatef(src_pos.x, src_pos.y + 1, src_pos.z + 1);
+			glm::mat4 C = glm::translate(pos)*glm::rotate(angle, axis);
+			src_pos = glm::vec3(C * glm::vec4(src_pos, 1.0));
+			dest_pos = get_join_location(charaters[0], aiString("lhand")) + charaters[0].position;
+			
+		} else {
+			glm::vec3 t = glm::mix(src_pos, dest_pos, pitch_step);
+			glTranslatef(t.x, t.y, t.z);
+		}
+		// if (pitch_step < 1.0) {
+			renderModel(models[3].scene->mRootNode, &models[3], false);
+		//}
 	glPopMatrix();
-
-
-	glTranslatef(dest_pos.x, dest_pos.y, dest_pos.z);
-	glutSolidCube(2);
-
 
     glPopMatrix();
 
@@ -279,8 +293,10 @@ void display()
     // Render the enviorment models
     glm::vec3 offset(8.8, yrot, zrot);
     glm::vec3 offset1(7.6, yrot, 1);
+	glPushMatrix();
     platform(1, platform_height, (charaters[0].position + offset) * scene_scale);
     platform(1, platform_height, (charaters[1].position - offset1) * scene_scale);
+	glPopMatrix();
 	floorPlane(32, 4);
 	enviroment();
 
@@ -324,6 +340,10 @@ void keyboard_handler(unsigned char key, int x, int y) {
         case 'c':
             zrot += 0.2;
 			cout << xrot << ", " << yrot << ", " << zrot << "\n";
+			break;
+		case 'g':
+			charaters[0].tick += charaters[0].tickStep;
+			cout << charaters[0].tick << "\n";
 			break;
 	}
 	viewer.move(dir);
