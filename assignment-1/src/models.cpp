@@ -37,9 +37,12 @@ void enviroment() {
     glColor3f(1.0, 1.0, 1.0);
     glDisable(GL_LIGHTING);
     glBindTexture(GL_TEXTURE_2D, textureIds[ENV]);
-    glRotatef(180, 0, 1, 0);
-    glRotatef(-90, 1, 0, 0);
-    gluSphere(q, 100, 25, 25);
+    glPushMatrix();
+        //glTranslatef(0, 80, 0);
+        //glRotatef(180, 0, 1, 0);
+        glRotatef(-90, 1, 0, 0);
+        gluSphere(q, 150, 15, 15);
+    glPopMatrix();
     glEnable(GL_LIGHTING);
 }
 
@@ -89,7 +92,7 @@ void loadTextures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, textureIds[FLOOR]);
-    loadTGA("../textures/tiles.tga");
+    loadTGA("../textures/ground.tga");
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -120,16 +123,16 @@ void floorPlane(int width, int tileWidth) {
     glBegin(GL_QUADS);
     for (int i = -width / tileWidth / 2; i < width/ tileWidth / 2; i++) {
         for (int j = -width / tileWidth / 2; j < width / tileWidth/  2; j++) {
-            glTexCoord2f(0, 0);
+            glTexCoord2f((float)(width/2 + i) / width, (float)(width/2 + j) / width);
             glVertex3f(i*tileWidth, 0, j*tileWidth);
 
-            glTexCoord2f(0, 1);
+            glTexCoord2f((float)(width/2 + i) / width, (float)(width/2 + j + 1) / width);
             glVertex3f(i*tileWidth, 0, (j + 1) * tileWidth);
 
-            glTexCoord2f(1, 1);
+            glTexCoord2f((float)(width/2 + i + 1) / width, (float)(width/2 + j + 1) / width);
             glVertex3f((i + 1) * tileWidth, 0, (j + 1) * tileWidth);
 
-            glTexCoord2f(1, 0);
+            glTexCoord2f((float)(width/2 + i + 1) / width, (float)(width/2 + j) / width);
             glVertex3f((i + 1) * tileWidth, 0, j * tileWidth);
         }
     }
@@ -186,7 +189,6 @@ void hemisphere(float r, int p, int q) {
 }
 
 void ball_joint_1(float r) {
-    //glm::vec3 green = rgbHexToVec(0x6b8e23);//rgbHexToVec(0x228b22);
     hemisphere(r, 50, 150);
     gluSphere(q, 0.9 * r, 25, 25);
     glRotatef(90, 1, 0, 0);

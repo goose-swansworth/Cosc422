@@ -4,6 +4,11 @@
 #include "model_loader.h"
 #include "models.h"
 
+#define BAT 0
+#define HELMET 1
+#define HAT 2
+#define BALL 3
+
 struct Charater {
 	const aiScene* scene = NULL;
 	int tick = 0;

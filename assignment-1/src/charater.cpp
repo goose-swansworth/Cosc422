@@ -26,12 +26,12 @@ bool replace_links(aiString name, Model models[], int charater) {
             glTranslatef(0, 0.25, -2);
             glRotatef(45, 1, 0, 0);
             glScalef(0.11, 0.11, 0.11);
-            renderModel(models[1].scene->mRootNode, &models[1], true);
+            renderModel(models[HELMET].scene->mRootNode, &models[HELMET], true);
             glEnable(GL_TEXTURE_2D);
         } else {
             glRotatef(-45, 1, 0, 0);
             glScalef(1.5, 1.5, 1.5);
-            renderModel(models[2].scene->mRootNode, &models[2], false);
+            renderModel(models[HAT].scene->mRootNode, &models[HAT], false);
         }
 
 		return true;
@@ -60,7 +60,7 @@ bool replace_links(aiString name, Model models[], int charater) {
                 glScalef(15, 15, 15);
                 glRotatef(70, 1, 0, 0);
                 glRotatef(25, 0, 1, 0);
-                renderModel(models[0].scene->mRootNode, &models[0], false);
+                renderModel(models[BAT].scene->mRootNode, &models[BAT], false);
             glPopMatrix();
         }
 		return true;
