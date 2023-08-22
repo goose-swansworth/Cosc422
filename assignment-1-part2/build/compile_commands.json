@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/main.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/src/main.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/src/main.cpp"
+},
+{
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/model_loader.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/src/model_loader.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1-part2/src/model_loader.cpp"
+}
+]

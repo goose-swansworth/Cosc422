@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(assignment-1-part2)
 
-add_executable(main.out src/main.cpp  src/assimp_extras.h)
+add_executable(main.out src/main.cpp src/model_loader.cpp src/assimp_extras.h)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)

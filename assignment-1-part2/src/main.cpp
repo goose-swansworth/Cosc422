@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <GL/freeglut.h>
+#include <glm/glm.hpp>
 #include <IL/il.h>
 using namespace std;
 
@@ -18,6 +19,11 @@ using namespace std;
 #include <assimp/postprocess.h>
 #include "assimp_extras.h"
 
+#include "model_loader.h"
+
+#define WINDOW_WIDTH 1600
+#define WINDOW_HEIGHT 900
+
 //----------Globals----------------------------
 const aiScene* scene = nullptr;
 float camAngle = 0, camDist = 0, camNear = 0, camFov = 60.0;		//Camera's parameters
@@ -26,6 +32,10 @@ int currTick = 0, tDuration = 0;
 float toRad = 3.14159265 / 180.0;   //Conversion from degrees to radians
 float timeStep;
 GLuint* textureIds = 0;
+int animIndex = 0;
+int off = 0;
+
+Model castle;
 
 //----A basic mesh structure that stores initial values of-----
 //----vertex coordinates and normal components-----------------
@@ -141,6 +151,17 @@ void loadGLTextures(const aiScene* scene)
 }
 
 
+glm::vec3 rgbHexToVec(int hexcode) {
+    glm::vec3 color(0);
+    int r_mask = 0xff0000;
+    int g_mask = 0x00ff00;
+    int b_mask = 0x0000ff;
+    color.x = (float)((hexcode & r_mask) >> 16) / 255;
+    color.y = (float)((hexcode & g_mask) >> 8) / 255;
+    color.z = (float)(hexcode & b_mask) / 255;
+    return color;
+}
+
 //-----Draws all meshes of the character model by traversing the node tree-----
 void render(const aiScene* scene, const aiNode* node)
 {
@@ -226,7 +247,7 @@ void render(const aiScene* scene, const aiNode* node)
 // Added:  Interpolation between keyframes
 void updateNodeMatrices(int tick)
 {
-	aiAnimation* anim = scene->mAnimations[0];
+	aiAnimation* anim = scene->mAnimations[animIndex];
 	aiMatrix4x4 matPos, matRot, matProd;
 	aiMatrix3x3 matRot3;
 	aiNode* node;
@@ -300,21 +321,34 @@ void transformVertices() {
     aiMatrix4x4 A;
     aiMatrix3x3 N;
     aiNode* node;
+    unsigned int vertexId;
+    aiVector3D v;
+    aiVector3D n;
+
     for (int meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++) {
         mesh = scene->mMeshes[meshIndex];
         for (int i = 0; i < mesh->mNumBones; i++) {
             bone = mesh->mBones[i];
             node = scene->mRootNode->FindNode(bone->mName);
+            // Form the matrix product
             A = bone->mOffsetMatrix;
             while (node->mParent != NULL) {
                 A = node->mTransformation * A;
                 node = node->mParent;
             }
             A = node->mTransformation * A; // The roots transformation
+            // Compute the normal tranformation N = A^-T
             N = aiMatrix3x3(A);
-            N = N.Transpose();
-            N = N.Inverse();
-            transformVerticesInBone(meshIndex, mesh, bone, aiMatrix3x3(A), N);
+            N.Transpose();
+            N.Inverse();
+            // Transform all the vertices in the bone
+            for (int i = 0; i < bone->mNumWeights; i++) {
+                vertexId = (bone->mWeights[i]).mVertexId;
+                v = initData[meshIndex].mVertices[vertexId];
+                n = initData[meshIndex].mNormals[vertexId];
+                mesh->mVertices[vertexId] = A * v;
+                mesh->mNormals[vertexId] = N * n;
+            }
         }
     }
 }
@@ -335,6 +369,9 @@ void special(int key, int x, int y)
 {
 	if (key == GLUT_KEY_LEFT) camAngle -= 5;
 	else if (key == GLUT_KEY_RIGHT) camAngle += 5;
+	else if (key == GLUT_KEY_UP) off -= 1;
+	else if (key == GLUT_KEY_DOWN) off += 1;
+	cout << off << "\n";
 	glutPostRedisplay();
 }
 
@@ -359,19 +396,50 @@ void initialise()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, white);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50);
 
-    loadModel("models/Dwarf/dwarf.x");			//Specify input file name here
+	glEnable(GL_MULTISAMPLE);
+    glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+
+    loadModel("../models/Bob_Lamp/Bob_Lamp.md5mesh");			//Specify input file name here
+
+	loadModel("../models/Bowser's Castle/cobKoopaCastle.dae", &castle);
+	loadGLTextures(&castle);
+
 	loadGLTextures(scene);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(camFov, 1, camNear, 5000.0);
+	gluPerspective(80, (float)WINDOW_WIDTH / WINDOW_HEIGHT, 0.2, 5000.0);
 
-	tDuration = scene->mAnimations[0]->mDuration;
-	float fps = scene->mAnimations[0]->mTicksPerSecond;
+	tDuration = scene->mAnimations[animIndex]->mDuration;
+	float fps = scene->mAnimations[animIndex]->mTicksPerSecond;
 	if (fps < 10) fps = 30;
 	timeStep = 1000.0 / fps;     //Animation time step in m.Sec
 }
 
-//------The main display function---------
+void floorPlane(int width, int tileWidth) {
+    glm::vec3 gray = 4.0f * rgbHexToVec(0xADFF2F);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glColor3f(gray.x, gray.y, gray.z);
+    glBegin(GL_QUADS);
+    for (int i = -width / tileWidth / 2; i < width/ tileWidth / 2; i++) {
+        for (int j = -width / tileWidth / 2; j < width / tileWidth/  2; j++) {
+            glTexCoord2f((float)(width/2 + i) / width, (float)(width/2 + j) / width);
+            glVertex3f(i*tileWidth, 0, j*tileWidth);
+
+            glTexCoord2f((float)(width/2 + i) / width, (float)(width/2 + j + 1) / width);
+            glVertex3f(i*tileWidth, 0, (j + 1) * tileWidth);
+
+            glTexCoord2f((float)(width/2 + i + 1) / width, (float)(width/2 + j + 1) / width);
+            glVertex3f((i + 1) * tileWidth, 0, (j + 1) * tileWidth);
+
+            glTexCoord2f((float)(width/2 + i + 1) / width, (float)(width/2 + j) / width);
+            glVertex3f((i + 1) * tileWidth, 0, j * tileWidth);
+        }
+    }
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_TEXTURE_2D);
+}
+
 void display()
 {
 	float lightPosn[4] = { -200, 200, 200, 1 }; 
@@ -387,10 +455,17 @@ void display()
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosn);
 
 	glPushMatrix();
-	   glTranslatef(0, -scene_min.y, 0);   //move the character above floor plane
-	   render(scene, scene->mRootNode);
+		glTranslatef(0, -scene_min.y, 0);   //move the character above floor plane
+		glPushMatrix();
+			glRotatef(90, 1, 0, 0);
+			render(scene, scene->mRootNode);
+		glPopMatrix();
+		glTranslatef(0, 0, -100);
+		renderModel(castle.scene->mRootNode, &castle, false);
+		
 	glPopMatrix();
-
+	glTranslatef(0, -100, 0);
+	floorPlane(1024, 32);
 	glutSwapBuffers();
 }
 
@@ -399,8 +474,8 @@ void display()
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(600, 600);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 	glutCreateWindow("Character Animation");
 
 	initialise();
