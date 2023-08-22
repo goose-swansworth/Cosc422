@@ -23,6 +23,7 @@ using namespace std;
 #include "models.h"
 #include "model_loader.h"
 #include "charater.h"
+#include "shadow.h"
 
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
@@ -40,6 +41,8 @@ float scene_scale;
 float platform_height = 0.15;
 
 const float lightPosn[4] = {0, 100, 50, 1};
+const float plane[4] = {0, 1, 0, 0};
+static float shadowMat[16];
 
 const glm::vec3 platformOffset0(8.8, 0, 0);
 const glm::vec3 platformOffset1(7.6, 0, 1);
@@ -59,6 +62,7 @@ float pitchStep = 0;
 float hitStep = 0;
 const float pitchDelta = 0.1;
 const float hitDelta = 0.15;
+const glm::vec3 g(0, -4.9, 0);
 
 // Viewer - Camera realted globals
 Camera viewer(glm::vec3(0, 0, 7));
@@ -158,7 +162,7 @@ void updateCharaters(int value) {
 	if (charaters[HITTER].tick >= firstHit + 25 && !hit) {
 		hit = true;
 		hitDir = glm::ballRand(hitRadius);
-		hitDir.x = abs(hitDir.x);
+		hitDir.z = abs(hitDir.z);
 		hitDir.y = abs(hitDir.y) + 20;
 	}
 
@@ -186,7 +190,7 @@ void renderCharaters() {
 	}
 }
 
-void renderBaseball() {
+void renderBaseball(bool shadow) {
 	glm::vec3 axis = charaters[PITCHER].axis;
 	glm::vec3 pos = charaters[PITCHER].position;
 	float angle = charaters[PITCHER].angle; 
@@ -195,19 +199,24 @@ void renderBaseball() {
 			src_pos = get_join_location(charaters[PITCHER], aiString("rhand"));
 			glTranslatef(pos.x, pos.y, pos.z);
 			glRotatef(angle, axis.x, axis.y, axis.z);
-			glTranslatef(src_pos.x, src_pos.y + 1, src_pos.z + 1);
-			glm::mat4 C = glm::translate(pos)*glm::rotate(angle, axis);
-			src_pos = glm::vec3(C * glm::vec4(src_pos, 1.0));
+			glTranslatef(src_pos.x, src_pos.y, src_pos.z);
+			src_pos = glm::vec3(
+				glm::translate(pos) * glm::rotate(angle, axis) * glm::translate(src_pos) * glm::vec4(0.0, 0.0, 0.0, 1.0)
+			);
 			dest_pos = get_join_location(charaters[HITTER], aiString("lhand")) + charaters[HITTER].position;
 		} else if (thrown && !hit) {
 			glm::vec3 t = glm::mix(src_pos, dest_pos, pitchStep);
 			glTranslatef(t.x, t.y, t.z);
 		} else {
-			glm::vec3 t = glm::mix(dest_pos, hitDir, hitStep);
+			// Projectile motion
+			glm::vec3 vi = hitDir - dest_pos;
+			glm::vec3 delta = vi * hitStep + 0.5f * g * hitStep * hitStep;
+			glm::vec3 t = dest_pos + delta;
+
 			glTranslatef(t.x, t.y, t.z);
 		}
 		glRotatef(glm::degrees(2 * M_PI) * (hitStep + pitchStep), 1, 0, 0);
-		renderModel(models[BALL].scene->mRootNode, &models[BALL], false);
+		renderModel(models[BALL].scene->mRootNode, &models[BALL], shadow);
 	glPopMatrix();
 }
 
@@ -276,6 +285,8 @@ void initialise() {
 	viewer.position = pitcherViewPos1;
 	viewer.fowards = pitcherViewFoward1;
 
+	shadowMatrix(plane, lightPosn, shadowMat);
+
 	get_bounding_box(charaters[HITTER].scene, &scene_min, &scene_max);
 	scene_center = (scene_min + scene_max) * 0.5f;
 	aiVector3D scene_diag = scene_max - scene_center;
@@ -304,14 +315,27 @@ void display() {
 	glPopMatrix();
 	enviroment();
 
-	//Render the charaters
+	
 	glPushMatrix();
 		glScalef(scene_scale, scene_scale, scene_scale); // Scale the scene to the charaters
 		glTranslatef(0, (platform_height - 0.055) / scene_scale, 0);
-		renderCharaters();
-		renderBaseball();
-    glPopMatrix();
 
+		//Render the charaters and baseball
+		renderCharaters();
+		renderBaseball(false);
+
+		// Render the baseballs shadow
+		if (hit || thrown) {
+			glPushMatrix();
+				glMultMatrixf(shadowMat);
+				glTranslatef(0, 0.001, 0);
+				glDisable(GL_TEXTURE_2D);
+				glColor3f(0.3, 0.3, 0.3);
+				renderBaseball(true);
+				glEnable(GL_TEXTURE_2D);
+			glPopMatrix();
+		}
+    glPopMatrix();
 	glutSwapBuffers();
 }
 

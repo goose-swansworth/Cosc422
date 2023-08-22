@@ -142,6 +142,7 @@ void floorPlane(int width, int tileWidth) {
 }
 
 void platform(float r, float h, glm::vec3 pos) {
+    glColor3f(1.0, 1.0, 1.0);
     glBindTexture(GL_TEXTURE_2D, textureIds[WOOD]);
     glPushMatrix();
     glTranslatef(pos.x, pos.y, pos.z);

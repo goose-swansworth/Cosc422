@@ -98,17 +98,12 @@ void renderModel(const aiNode* node, Model* model, bool overideColor)
 		materialIndex = mesh->mMaterialIndex;  //Get material index attached to the mesh
 		mtl = scene->mMaterials[materialIndex];
 
-		if (AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))  //Get material colour from model
+		if (AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse) && !overideColor)  //Get material colour from model
 		{
 			glColor4f(diffuse.r, diffuse.g, diffuse.b, 1.0);
 		}
 
-		if (overideColor) {
-			glColor3f(1, 0.3, 0.3);
-		}
-
-
-		if (mesh->HasTextureCoords(0))
+		if (mesh->HasTextureCoords(0) && !overideColor)
 		{
 			aiString path;
 			const char* cpath;

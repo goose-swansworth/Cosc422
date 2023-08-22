@@ -26,6 +26,7 @@ bool replace_links(aiString name, Model models[], int charater) {
             glTranslatef(0, 0.25, -2);
             glRotatef(45, 1, 0, 0);
             glScalef(0.11, 0.11, 0.11);
+			glColor3f(1, 0.3, 0.3);
             renderModel(models[HELMET].scene->mRootNode, &models[HELMET], true);
             glEnable(GL_TEXTURE_2D);
         } else {
