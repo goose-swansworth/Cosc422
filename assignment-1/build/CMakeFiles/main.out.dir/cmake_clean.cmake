@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/main.out.dir/src/charater.cpp.o"
-  "CMakeFiles/main.out.dir/src/charater.cpp.o.d"
+  "CMakeFiles/main.out.dir/src/character.cpp.o"
+  "CMakeFiles/main.out.dir/src/character.cpp.o.d"
   "CMakeFiles/main.out.dir/src/loadTGA.cpp.o"
   "CMakeFiles/main.out.dir/src/loadTGA.cpp.o.d"
   "CMakeFiles/main.out.dir/src/main.cpp.o"

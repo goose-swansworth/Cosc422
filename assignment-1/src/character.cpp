@@ -1,17 +1,17 @@
 
-#include "charater.h"
+#include "character.h"
 
-Charater init_charater(const aiScene* scene, glm::vec3 position, float angle, glm::vec3 axis, int code) {
-    Charater charater;
-    charater.scene = scene;
-    charater.position = position;
-    charater.angle = angle;
-    charater.axis = axis;
-    charater.code = code;
-    return charater;
+Character init_character(const aiScene* scene, glm::vec3 position, float angle, glm::vec3 axis, int code) {
+    Character character;
+    character.scene = scene;
+    character.position = position;
+    character.angle = angle;
+    character.axis = axis;
+    character.code = code;
+    return character;
 }
 
-bool replace_links(aiString name, Model models[], int charater) {
+bool replace_links(aiString name, Model models[], int character) {
 	float r = 1;
 	if (name == aiString("Chest")) {
 		chest();
@@ -21,7 +21,7 @@ bool replace_links(aiString name, Model models[], int charater) {
 		return true;
 	}  else if (name == aiString("Head")) {
 		head();
-        if (charater == 0) {
+        if (character == 0) {
             glDisable(GL_TEXTURE_2D);
             glTranslatef(0, 0.25, -2);
             glRotatef(45, 1, 0, 0);
@@ -56,7 +56,7 @@ bool replace_links(aiString name, Model models[], int charater) {
 		return true;
 	} else if (name == aiString("lhand")) {
 		hand();
-        if (charater == 0) {
+        if (character == 0) {
             glPushMatrix();
                 glScalef(15, 15, 15);
                 glRotatef(70, 1, 0, 0);
@@ -83,9 +83,9 @@ bool replace_links(aiString name, Model models[], int charater) {
 }
 
 
-void renderCharater(const aiNode* node, Charater charater, Model models[])
+void renderCharacter(const aiNode* node, Character character, Model models[])
 {
-	const aiScene* scene = charater.scene;              				 	 	 	 	 	 
+	const aiScene* scene = character.scene;              				 	 	 	 	 	 
 	aiMatrix4x4 m = node->mTransformation;
 	aiMesh* mesh;
 	aiFace* face;
@@ -123,12 +123,12 @@ void renderCharater(const aiNode* node, Charater charater, Model models[])
 			}
 		}
 	} else {
-        replace_links(node->mName, models, charater.code);
+        replace_links(node->mName, models, character.code);
 	}
 
 	// Recursively draw all children of the current node
 	for (int i = 0; i < node->mNumChildren; i++)
-		renderCharater(node->mChildren[i], charater, models);
+		renderCharacter(node->mChildren[i], character, models);
 		
 
 	glPopMatrix();

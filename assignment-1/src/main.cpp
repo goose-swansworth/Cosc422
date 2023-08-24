@@ -22,7 +22,7 @@ using namespace std;
 #include "camera.h"
 #include "models.h"
 #include "model_loader.h"
-#include "charater.h"
+#include "character.h"
 #include "shadow.h"
 
 #define WINDOW_WIDTH 1600
@@ -33,9 +33,9 @@ using namespace std;
 #define HITTER 0
 #define PITCHER 1
 
-// Model and Charater arrays
+// Model and Character arrays
 Model models[4];
-Charater charaters[2];
+Character characters[2];
 aiVector3D scene_min, scene_max, scene_center;
 float scene_scale;
 float platform_height = 0.15;
@@ -50,8 +50,9 @@ const glm::vec3 platformOffset1(7.6, 0, 1);
 // Globals associated with the pitch/hit animation
 static bool thrown = false;
 static bool hit = false;
-static glm::vec3 src_pos;
-static glm::vec3 dest_pos;
+static glm::vec3 srcPos;
+static glm::vec3 destPos;
+static glm::vec3 ballPos;
 static glm::vec3 hitDir;
 const unsigned int firstHit = 324;
 const unsigned int secondHit = 1011;
@@ -67,6 +68,7 @@ const glm::vec3 g(0, -4.9, 0);
 // Viewer - Camera realted globals
 Camera viewer(glm::vec3(0, 0, 7));
 static glm::vec2 mouse_last;
+static bool batterView = false;
 
 static bool pitcherView = false;
 
@@ -82,9 +84,15 @@ const glm::vec3 hitterViewFoward1(0.403485, 0.136573, 0.904736);
 const glm::vec3 hitterViewPos2(3.2979, 1.39968, -8.78759);
 const glm::vec3 hitterViewFoward2(-0.502268, -0.0378983, 0.863881);
 
-glm::vec3 get_join_location(Charater charater, aiString name) {
+const glm::vec3 perspectiveOffset(-8.7, 1, -15.4);
+
+float xoff = 0;
+float yoff= 0;
+float zoff = 0;
+
+glm::vec3 get_join_location(Character character, aiString name) {
     aiVector3D P = aiVector3D(0, 0, 0);
-    aiNode* node = charater.scene->mRootNode->FindNode(name);
+    aiNode* node = character.scene->mRootNode->FindNode(name);
     while (node->mParent != NULL) {
         P *= node->mTransformation;
         node = node->mParent;
@@ -93,7 +101,7 @@ glm::vec3 get_join_location(Charater charater, aiString name) {
     return glm::vec3(P.x, P.y, P.z);
 }
 
-void updateNodeMatrices(int tick, Charater* charater) {
+void updateNodeMatrices(int tick, Character* character) {
 	aiAnimation* anim;   
 	aiMatrix4x4 T, R;  
 	aiMatrix3x3 matRot3;
@@ -101,7 +109,7 @@ void updateNodeMatrices(int tick, Charater* charater) {
 	aiQuaternion rot;
 	aiNode* node;
 
-	anim = charater->scene->mAnimations[0];
+	anim = character->scene->mAnimations[0];
 	for (int i = 0; i < anim->mNumChannels; i++) {
 		T = aiMatrix4x4();   
 		R = aiMatrix4x4();
@@ -122,44 +130,43 @@ void updateNodeMatrices(int tick, Charater* charater) {
 		matRot3 = rot.GetMatrix();
 		R = aiMatrix4x4(matRot3);
 		
-		node = charater->scene->mRootNode->FindNode(channel->mNodeName);
+		node = character->scene->mRootNode->FindNode(channel->mNodeName);
 		node->mTransformation = T * R;
 	}
 }
 
 void updateCharaters(int value) {
-	unsigned int timeStep = SEC_MS / charaters[HITTER].scene->mAnimations[0]->mTicksPerSecond;
-	unsigned int hitDur = charaters[HITTER].scene->mAnimations[0]->mDuration;
+	unsigned int timeStep = SEC_MS / characters[HITTER].scene->mAnimations[0]->mTicksPerSecond;
+	unsigned int hitDur = characters[HITTER].scene->mAnimations[0]->mDuration;
 	unsigned int pitchDur = tPitch;
 	
-	if (charaters[HITTER].tick < pitchDur) {
-		charaters[HITTER].tick += charaters[HITTER].tickStep;
+	if (characters[HITTER].tick < pitchDur) {
+		characters[HITTER].tick += characters[HITTER].tickStep;
 	} else {
-		charaters[HITTER].tick = 0;
+		characters[HITTER].tick = 0;
 	}
 
-	if (charaters[HITTER].tick <= firstHit) {
-		float t = (float)charaters[HITTER].tick / firstHit;
-		charaters[PITCHER].tick = (int)(pitchTime * t);
+	if (characters[HITTER].tick <= firstHit) {
+		float t = (float)characters[HITTER].tick / firstHit;
+		characters[PITCHER].tick = (int)(pitchTime * t);
 	} else {
-		float t = (float)(charaters[HITTER].tick - firstHit) / (secondHit - firstHit);
-		charaters[PITCHER].tick = (int)(pitchTime + pitchTime*t) % pitchDur;
+		float t = (float)(characters[HITTER].tick - firstHit) / (secondHit - firstHit);
+		characters[PITCHER].tick = (int)(pitchTime + pitchTime*t) % pitchDur;
 	}
 
-	if (charaters[PITCHER].tick >= pitchTime) {
+	if (characters[PITCHER].tick >= pitchTime) {
 		thrown = true;
 		pitchStep += pitchDelta;
-		pitchStep = glm::clamp(pitchStep, 0.0f, 1.0f);
 	}
 
-	if (charaters[HITTER].tick % pitchDur < 1) {
-		thrown = false;
+	if (characters[HITTER].tick % pitchDur < 1) {
+		thrown = false; 
 		hit = false;
 		pitchStep = 0;
 		hitStep = 0;
 	}
 
-	if (charaters[HITTER].tick >= firstHit + 25 && !hit) {
+	if (characters[HITTER].tick >= firstHit + 25 && !hit) {
 		hit = true;
 		hitDir = glm::ballRand(hitRadius);
 		hitDir.z = abs(hitDir.z);
@@ -171,7 +178,7 @@ void updateCharaters(int value) {
 	} 
 
 	for (int i = 0; i < N_CHARATERS; i++) {
-		updateNodeMatrices(charaters[i].tick, &charaters[i]);
+		updateNodeMatrices(characters[i].tick, &characters[i]);
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1, updateCharaters, 0);
@@ -180,42 +187,45 @@ void updateCharaters(int value) {
 void renderCharaters() {
 	glm::vec3 pos, axis;
     for (int i = 0; i < N_CHARATERS; i++) { 
-        pos = charaters[i].position;
-        axis = charaters[i].axis;
+        pos = characters[i].position;
+        axis = characters[i].axis;
         glPushMatrix();
             glTranslatef(pos.x, pos.y, pos.z);
-            glRotatef(charaters[i].angle, axis.x, axis.y, axis.z);
-            renderCharater(charaters[i].scene->mRootNode, charaters[i], models);
+            glRotatef(characters[i].angle, axis.x, axis.y, axis.z);
+            renderCharacter(characters[i].scene->mRootNode, characters[i], models);
         glPopMatrix();
 	}
 }
 
 void renderBaseball(bool shadow) {
-	glm::vec3 axis = charaters[PITCHER].axis;
-	glm::vec3 pos = charaters[PITCHER].position;
-	float angle = charaters[PITCHER].angle; 
+	glm::vec3 axis = characters[PITCHER].axis;
+	glm::vec3 pos = characters[PITCHER].position;
+	float angle = characters[PITCHER].angle; 
 	glPushMatrix();
 		if (!thrown && !hit) {
-			src_pos = get_join_location(charaters[PITCHER], aiString("rhand"));
+			srcPos = get_join_location(characters[PITCHER], aiString("rhand"));
 			glTranslatef(pos.x, pos.y, pos.z);
 			glRotatef(angle, axis.x, axis.y, axis.z);
-			glTranslatef(src_pos.x, src_pos.y, src_pos.z);
-			src_pos = glm::vec3(
-				glm::translate(pos) * glm::rotate(angle, axis) * glm::translate(src_pos) * glm::vec4(0.0, 0.0, 0.0, 1.0)
+			glTranslatef(srcPos.x, srcPos.y, srcPos.z);
+			srcPos = glm::vec3(
+				glm::translate(pos) * glm::rotate(angle, axis) * glm::translate(srcPos) * glm::vec4(0.0, 0.0, 0.0, 1.0)
 			);
-			dest_pos = get_join_location(charaters[HITTER], aiString("lhand")) + charaters[HITTER].position;
+			destPos = get_join_location(characters[HITTER], aiString("lhand")) + characters[HITTER].position;
+			ballPos = srcPos;
 		} else if (thrown && !hit) {
-			glm::vec3 t = glm::mix(src_pos, dest_pos, pitchStep);
+			glm::vec3 t = glm::mix(srcPos, destPos, pitchStep);
+			ballPos = t;
 			glTranslatef(t.x, t.y, t.z);
 		} else {
 			// Projectile motion
-			glm::vec3 vi = hitDir - dest_pos;
-			glm::vec3 delta = vi * hitStep + 0.5f * g * hitStep * hitStep;
-			glm::vec3 t = dest_pos + delta;
-
+			float s = glm::clamp(pitchStep, 0.0f, 1.0f);
+			glm::vec3 vi = hitDir - destPos;
+			glm::vec3 delta = vi * s + 0.5f * g * s * s;
+			glm::vec3 t = destPos + delta;
+			ballPos = t;
 			glTranslatef(t.x, t.y, t.z);
 		}
-		glRotatef(glm::degrees(2 * M_PI) * (hitStep + pitchStep), 1, 0, 0);
+		glRotatef(glm::degrees(2 * M_PI) * (hitStep + pitchStep), 1, 0.1, 0);
 		renderModel(models[BALL].scene->mRootNode, &models[BALL], shadow);
 	glPopMatrix();
 }
@@ -254,8 +264,8 @@ void initialise() {
     loadModel("../models/Ball/bbl_Ball.obj", &models[BALL]);
     loadGLTextures(&models[BALL]);
 
-	// Initialise charaters, load bvh files
-    charaters[HITTER] = init_charater(
+	// Initialise characters, load bvh files
+    characters[HITTER] = init_character(
             aiImportFile("../bvh/hit.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
             glm::vec3(0, 0, -112.1),
             0,
@@ -263,7 +273,7 @@ void initialise() {
             0
     );
 
-    charaters[PITCHER] = init_charater(
+    characters[PITCHER] = init_character(
             aiImportFile("../bvh/pitch.bvh", aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Debone),
             glm::vec3(10, 0, 112.1),
             180,
@@ -271,23 +281,23 @@ void initialise() {
             1
     );
 
-	if (charaters[HITTER].scene == NULL) {
+	if (characters[HITTER].scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
 	}
-	if (charaters[PITCHER].scene == NULL) {
+	if (characters[PITCHER].scene == NULL) {
 		cout << "bvh file not found.\n";
 		exit(1);
 	}
 
-	charaters[HITTER].tickStep = 3;
-	charaters[PITCHER].tickStep = 3;
+	characters[HITTER].tickStep = 3;
+	characters[PITCHER].tickStep = 3;
 	viewer.position = pitcherViewPos1;
 	viewer.fowards = pitcherViewFoward1;
 
 	shadowMatrix(plane, lightPosn, shadowMat);
 
-	get_bounding_box(charaters[HITTER].scene, &scene_min, &scene_max);
+	get_bounding_box(characters[HITTER].scene, &scene_min, &scene_max);
 	scene_center = (scene_min + scene_max) * 0.5f;
 	aiVector3D scene_diag = scene_max - scene_center;
 	scene_scale = 1.0 / scene_diag.Length();
@@ -299,6 +309,19 @@ void display() {
 	glLoadIdentity();
 
 	// Orient the viewer
+	if (batterView) {
+		viewer.position = scene_scale * (get_join_location(characters[HITTER], aiString("Head")) + characters[HITTER].position + perspectiveOffset);
+		if (pitchStep < 1) {
+			viewer.fowards = glm::normalize(srcPos - viewer.position);
+		} else {
+			viewer.fowards = glm::normalize(ballPos - viewer.position);
+		}
+		//  else {
+		// 	glm::vec3 tangent = glm::normalize(hitDir - destPos + g * hitStep);
+		// 	viewer.position = scene_scale * (ballPos - tangent)  ;
+		// 	viewer.fowards = tangent;
+		// }
+	}
 	glm::vec3 look = viewer.position + viewer.fowards;
 	gluLookAt(viewer.position.x, viewer.position.y, viewer.position.z, look.x, look.y, look.z, 0, 1, 0);
 
@@ -306,8 +329,8 @@ void display() {
 
 	// Render the enviorment models
 	glPushMatrix();
-		platform(1, platform_height, (charaters[HITTER].position + platformOffset0) * scene_scale);
-		platform(1, platform_height, (charaters[PITCHER].position - platformOffset1) * scene_scale);
+		platform(1, platform_height, (characters[HITTER].position + platformOffset0) * scene_scale);
+		platform(1, platform_height, (characters[PITCHER].position - platformOffset1) * scene_scale);
 	glPopMatrix();
 	glPushMatrix();
 		glRotatef(42.5, 0, 1, 0);
@@ -317,10 +340,10 @@ void display() {
 
 	
 	glPushMatrix();
-		glScalef(scene_scale, scene_scale, scene_scale); // Scale the scene to the charaters
+		glScalef(scene_scale, scene_scale, scene_scale); // Scale the scene to the characters
 		glTranslatef(0, (platform_height - 0.055) / scene_scale, 0);
 
-		//Render the charaters and baseball
+		//Render the characters and baseball
 		renderCharaters();
 		renderBaseball(false);
 
@@ -343,19 +366,27 @@ void keyboard_handler(unsigned char key, int x, int y) {
 	glm::vec3 dir(0.0);
 	switch (key) {
 		case 'w':
-			dir.x = 1;
+			//dir.x = 1;
+			xoff += 0.1;
 			break;
 		case 's':
-			dir.x = -1;
+			//dir.x = -1;
+			xoff -= 0.1;
 			break;
 		case 'a':
-			dir.z = -1;
+			//dir.z = -1;
+			zoff += 0.1;
 			break;
 		case 'd':
-			dir.z = 1;
+			//dir.z = 1;
+			zoff -= 0.1;
 			break;
 		case ' ':
-			dir.y = 1;
+			//dir.y = 1;
+			yoff += 0.1;
+			break;
+		case 'z':
+			yoff -= 0.1;
 			break;
 		case '1':
 			viewer.position = pitcherViewPos1;
@@ -374,11 +405,12 @@ void keyboard_handler(unsigned char key, int x, int y) {
 			viewer.fowards = hitterViewFoward2;
 			break;
 		case '5':
-			pitcherView = true;
+			batterView = !batterView;
 			break;
 		case 'q':
 			exit(0);
 	}
+	cout << xoff << ", " << yoff << ", " << zoff << "\n";
 	viewer.move(dir);
 	glutPostRedisplay();
 }

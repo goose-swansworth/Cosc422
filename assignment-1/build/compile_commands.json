@@ -1,38 +1,32 @@
 [
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/main.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/main.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/main.cpp",
-  "output": "CMakeFiles/main.out.dir/src/main.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/main.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/main.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/main.cpp"
 },
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/shadow.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/shadow.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/shadow.cpp",
-  "output": "CMakeFiles/main.out.dir/src/shadow.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/shadow.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/shadow.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/shadow.cpp"
 },
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/charater.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/charater.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/charater.cpp",
-  "output": "CMakeFiles/main.out.dir/src/charater.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/character.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/character.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/character.cpp"
 },
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/models.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/models.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/models.cpp",
-  "output": "CMakeFiles/main.out.dir/src/models.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/models.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/models.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/models.cpp"
 },
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/model_loader.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/model_loader.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/model_loader.cpp",
-  "output": "CMakeFiles/main.out.dir/src/model_loader.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/model_loader.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/model_loader.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/model_loader.cpp"
 },
 {
-  "directory": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/loadTGA.cpp.o -c /home/l0ng4rm5/Programming/Cosc422/assignment-1/src/loadTGA.cpp",
-  "file": "/home/l0ng4rm5/Programming/Cosc422/assignment-1/src/loadTGA.cpp",
-  "output": "CMakeFiles/main.out.dir/src/loadTGA.cpp.o"
+  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/src/loadTGA.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-1/src/loadTGA.cpp",
+  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-1/src/loadTGA.cpp"
 }
 ]

@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "main.out::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-main.out-Debug-a26ecdc25e68f42434cc.json",
+					"jsonFile" : "target-main.out-Debug-14ca72911c9754b40483.json",
 					"name" : "main.out",
 					"projectIndex" : 0
 				}
@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/l0ng4rm5/Programming/Cosc422/assignment-1/build",
-		"source" : "/home/l0ng4rm5/Programming/Cosc422/assignment-1"
+		"build" : "/csse/users/kjr106/Desktop/Cosc422/assignment-1/build",
+		"source" : "/csse/users/kjr106/Desktop/Cosc422/assignment-1"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 5
+		"minor" : 3
 	}
 }
