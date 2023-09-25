@@ -9,14 +9,8 @@ uniform float waterHeight;
 
 out float worldHeight;
 out vec3 worldPosition;
-out float normalizedDepth;
 out vec2 texCoords;
-out float waveHeight;
 out vec3 N;
-
-float exp_mix(float a, float b, float n, float x) {
-    return a * exp(log(b / a) * pow(x, n));
-}
 
 vec4 sampleHeightMap(vec4 position) {
     float xMin = -45, xMax = +45, zMin = 0, zMax = -90;
@@ -27,19 +21,16 @@ vec4 sampleHeightMap(vec4 position) {
     float height = texture(heightMap, heightMapTexCoords).r;
     position.y = height * 10.0;
 
-    float aMin = 0.01;
-    float aMax = 0.1;
-    float omega = 16; 
+    float aMin = 0.05;
+    float aMax = 0.15;
+    float omega = 8; 
     float delta = 0.005;
 
     float d = (waterHeight - position.y) / waterHeight;
-    normalizedDepth = d;
-    float amp = exp_mix(aMin, aMax, 2.0, 1 - d);
-    waveHeight = (amp - aMin) / aMax;
 
     if (position.y <= waterHeight) {
-        position.y = waterHeight + amp * sin(omega*(d + delta * waveTick));
-    } 
+        position.y = waterHeight + mix(aMin, aMin, d) * sin(omega*(d + delta * waveTick));
+    }
     return position;
 }
 
@@ -47,7 +38,7 @@ vec4 sampleHeightMap(vec4 position) {
 void main() {
     
     vec4 vert;
-    float epsilon = 0.1;
+    float epsilon = 0.001;
 
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;

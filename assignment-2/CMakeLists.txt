@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(assignment-2)
 
-add_executable(main.out main.cpp)
+add_executable(main.out Terrain.cpp)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)

@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/csse/users/kjr106/Desktop/Cosc422/assignment-2/build",
-  "command": "/usr/bin/g++   -g -o CMakeFiles/main.out.dir/main.cpp.o -c /csse/users/kjr106/Desktop/Cosc422/assignment-2/main.cpp",
-  "file": "/csse/users/kjr106/Desktop/Cosc422/assignment-2/main.cpp"
-}
-]

@@ -11,8 +11,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
-#include <string>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
@@ -29,8 +27,8 @@ static glm::vec2 mouse_last;
 
 GLuint vaoID;
 GLuint theProgram;
-GLuint mvpMatrixLoc, eyeLoc, zNear, zFar, waveTick, waterHeight, lightPosLoc;
-const unsigned int numTextures = 5; 
+GLuint mvpMatrixLoc, eyeLoc, zNear, zFar, waveTick, waterHeight;
+const unsigned int numTextures = 3; 
 GLuint textureIds[numTextures];
 float  eye_x = 0, eye_y = 20, eye_z = 30;      //Initial camera position
 float look_x = 0, look_y = 0, look_z = -40;    //"Look-at" point along -z direction
@@ -42,23 +40,6 @@ float verts[100*3];       //10x10 grid (100 vertices)
 GLushort elems[81*4];     //Element array for 9x9 = 81 quad patches
 
 glm::mat4 projView;
-glm::vec3 lightPosition(0, 20, 0);
-
-static const std::vector<std::string> texFilenames = {
-		"../bays.tga",
-		"../grass.tga",
-		"../water.tga",
-		"../sand.tga",
-		"../browngrass.tga"
-	};
-
-static const std::vector<std::string> texNames = {
-		"heightMap",
-		"grassTex",
-		"waterTex",
-		"sandTex",
-		"brownGrassTex"
-	};
 
 //Generate vertex and element data for the terrain floor
 void generateData()
@@ -91,22 +72,38 @@ void generateData()
 	}
 }
 
-void loadTexture(const char* filename, int index, int glTexNum) {
-	glActiveTexture(glTexNum);
-    glBindTexture(GL_TEXTURE_2D, textureIds[index]);
-	loadTGA(filename);
+//Loads height map
+void loadTexture()
+{
+    glGenTextures(numTextures, textureIds);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureIds[0]);
+	loadTGA("../bays.tga");
+
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-}
 
-//Loads height map
-void loadTextures() {
-    glGenTextures(numTextures, textureIds);
-	for (int i = 0; i < texFilenames.size(); i++) {
-		loadTexture(texFilenames[i].c_str(), i, GL_TEXTURE0 + i);
-	}
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureIds[1]);
+	loadTGA("../Grass.tga");
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, textureIds[2]);
+	loadTGA("../Water.tga");
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 }
 
 //Loads a shader file and returns the reference to a shader object
@@ -141,10 +138,8 @@ GLuint loadShader(GLenum shaderType, string filename)
 //Initialise the shader program, create and load buffer data
 void initialise()
 {
-	
-	viewer.position = glm::vec3(-1, 8, -31);
 //--------Load terrain height map-----------
-	loadTextures();
+	loadTexture();
 //--------Load shaders----------------------
 	GLuint shaderv = loadShader(GL_VERTEX_SHADER, "../Terrain.vert");
 	GLuint shaderf = loadShader(GL_FRAGMENT_SHADER, "../Terrain.frag");
@@ -181,14 +176,14 @@ void initialise()
 	glUniform1i(waveTick, 0);
 	glUniform1f(waterHeight, waterLevelf);
 
-	GLuint texLoc;
-	for (int i = 0; i < texNames.size(); i++) {
-		texLoc = glGetUniformLocation(program, texNames[i].c_str());
-		glUniform1i(texLoc, i);
-	}
+	GLuint heightMapLoc = glGetUniformLocation(program, "heightMap");
+	glUniform1i(heightMapLoc, 0);
 
-	lightPosLoc = glGetUniformLocation(program, "lightPos");
-	glUniform3fv(lightPosLoc, 1, &lightPosition[0]);
+	GLuint grassTexLoc = glGetUniformLocation(program, "grassTex");
+	glUniform1i(grassTexLoc, 1);
+
+	GLuint waterTexLoc = glGetUniformLocation(program, "waterTex");
+	glUniform1i(waterTexLoc, 2);
 
 //---------Load buffer data-----------------------
 	generateData();
@@ -244,13 +239,12 @@ void special(int key, int x, int y)
 {
 	int step = 0;
 	float dir_x, dir_z;
-	if (key == GLUT_KEY_LEFT) lightPosition.x += 1;   //in radians
-	else if (key == GLUT_KEY_RIGHT) lightPosition.x -= 1;
-	else if (key == GLUT_KEY_DOWN) lightPosition.z -= 1;
-	else if (key == GLUT_KEY_UP) lightPosition.z += 1;
-	cout << lightPosition.x << ", " << lightPosition.y << ", " << lightPosition.z << "\n";
+	if (key == GLUT_KEY_LEFT) theta += 0.1;   //in radians
+	else if (key == GLUT_KEY_RIGHT) theta -= 0.1;
+	else if (key == GLUT_KEY_DOWN) waterLevelf -= 0.01;
+	else if (key == GLUT_KEY_UP) waterLevelf += 0.01;
+	cout << waterLevelf << "\n";
 	glUniform1f(waterHeight, waterLevelf);
-	glUniform3fv(lightPosLoc, 1, &lightPosition[0]);
 	glutPostRedisplay();
 }
 
@@ -281,17 +275,9 @@ void keyboard_handler(unsigned char key, int x, int y) {
 		case ' ':
 			dir.y = 1;
 			break;
-		case 't':
-			lightPosition.y += 0.1;
-			break;
-		case 'g':
-			lightPosition.y -= 0.1;
-			break;
 		case 'q':
 			exit(0);
 	}
-	cout << viewer.position.x << ", " << viewer.position.y << ", " << viewer.position.z << "\n";
-	glUniform3fv(lightPosLoc, 1, &lightPosition[0]);
 	viewer.move(dir);
 	glutPostRedisplay();
 }
