@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(assignment-2)
 
-add_executable(main.out Terrain.cpp)
+add_executable(main.out src/main.cpp src/shader.h src/loadTGA.h)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
