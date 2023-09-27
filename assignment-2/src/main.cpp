@@ -43,6 +43,7 @@ float look_x = 0, look_y = 0, look_z = -40;    //"Look-at" point along -z direct
 float  theta = 0;                              //Look angle
 float toRad = 3.14159265/180.0;     //Conversion from degrees to rad
 float waterLevelf = 2.2;
+int tick = 0;
 
 float verts[100*3];       //10x10 grid (100 vertices)
 GLushort elems[81*4];     //Element array for 9x9 = 81 quad patches
@@ -53,7 +54,7 @@ glm::vec3 lightPosition(0, 40, 0);
 Shader* terrianShader;
 
 Shader* spriteShader;
-const unsigned int nSprites = 100000;
+const unsigned int nSprites = 150000;
 static const float xMin = -45;
 static const float xMax = 45;
 static const float zMin = -90;
@@ -67,8 +68,13 @@ static const std::vector<std::string> texFilenames = {
         "../textures/water.tga",
         "../textures/sand.tga",
         "../textures/browngrass.tga",
-        "../textures/pine.tga"
+        "../textures/pine.tga",
+        "../textures/birtch.tga",
+        "../textures/pine1.tga",
+        "../textures/birtch1.tga",
+        "../textures/bush.tga"
     };
+
 
 static const std::vector<std::string> texNames = {
         "heightMap",
@@ -76,8 +82,15 @@ static const std::vector<std::string> texNames = {
         "waterTex",
         "sandTex",
         "brownGrassTex",
-        "tree1"
+        "tree1",
+        "tree2",
+        "tree3",
+        "tree4",
+        "tree5"
     };
+
+static std::vector<unsigned int> texWidths;
+static std::vector<unsigned int> texHeights;
 
 //Generate vertex and element data for the terrain floor
 void generateData()
@@ -110,14 +123,15 @@ void generateData()
     }
 }
 
-void loadTexture(const char* filename, int index, int glTexNum) {
+void loadTexture(const char* filename, int index, int glTexNum, unsigned int* width, unsigned int* height) {
     glActiveTexture(glTexNum);
     glBindTexture(GL_TEXTURE_2D, textureIds[index]);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    loadTGA(filename);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    loadTGA(filename, width, height);
+    cout << filename << ": (" << *width << ", " << *height << ")\n"; 
     //int width, height, nChannels;
     //unsigned char* imgData = stbi_load(filename, &width, &height, &nChannels, 0);
     //if (imgData) {
@@ -136,8 +150,11 @@ void loadTexture(const char* filename, int index, int glTexNum) {
 void loadTextures()
 {
     glGenTextures(texNames.size(), textureIds);
+    unsigned int width, height;
     for (int i = 0; i < texNames.size(); i++) {
-        loadTexture(texFilenames[i].c_str(), i, GL_TEXTURE0 + i);
+        loadTexture(texFilenames[i].c_str(), i, GL_TEXTURE0 + i, &width, &height);
+        texWidths.push_back(width);
+        texHeights.push_back(height);
     }
 
 }
@@ -150,7 +167,6 @@ void populateSpriteArray(float points[], unsigned int nSprites) {
         points[i] = x;
         points[i + 1] = 0.0;
         points[i + 2] = z;
-        cout << points[i] << ", " << points[i + 1] << ", " << points[i + 2] << "\n";
     }
 }
 
@@ -229,6 +245,7 @@ void drawTerrian() {
     terrianShader->setInt("zNear", 20);
     terrianShader->setInt("zFar", 500);
     terrianShader->setFloat("waterHeight", waterLevelf);
+    terrianShader->setInt("waveTick", tick);
 
     glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
     glm::vec3 look = viewer.position + viewer.fowards;
@@ -253,6 +270,7 @@ void drawSprites() {
 
     for (int i = 0; i < texNames.size(); i++) {
         spriteShader->setInt(texNames[i], i);
+        spriteShader->setFloat(texNames[i] + "Aspect", (float)texWidths[i]/texHeights[i]);
     }
 
     glBindVertexArray(spritePointsVAO);
@@ -318,10 +336,9 @@ void keyboard_handler(unsigned char key, int x, int y) {
     glutPostRedisplay();
 }
 
-void animate(int tick) {
-    terrianShader->setInt("waveTick", tick);
+void animate(int val) {
     tick++;
-    glutTimerFunc(50, animate, tick);
+    glutTimerFunc(50, animate, val);
     glutPostRedisplay();
 
 }

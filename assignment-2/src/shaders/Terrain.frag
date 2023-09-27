@@ -49,17 +49,17 @@ void main()
 
      if (worldPosition.y < sandHeight) {
           landStep = smoothstep(sandHeight, waterHeight, worldPosition.y);
-          groundColor = landStep * texture(sandTex, texCoords) + (1 - landStep) * texture(grassTex, texCoords);
+          groundColor = landStep * texture(sandTex, 2.0 * texCoords) + (1 - landStep) * texture(grassTex, 2.0 * texCoords);
      } else {
           groundColor = mix(
-               texture(grassTex, texCoords),
-               texture(brownGrassTex, texCoords),
+               texture(grassTex, 2.0 * texCoords),
+               texture(brownGrassTex, 2.0 * texCoords),
                mapNormalised(worldPosition.y, sandHeight, 10)
           );
      }
      float edge = 0.1;
      float s = smoothstep(-edge, edge, normalizedDepth);
-     tex = s * mix(texture(waterTex, texCoords), white, waveHeight) + (1 - s) * groundColor;
+     tex = s * mix(texture(waterTex, 2.0 * texCoords), white, waveHeight) + (1 - s) * groundColor;
 
      gl_FragColor = ka * tex + diffuse(kd, L, N, tex);
      if (normalizedDepth > 0) {

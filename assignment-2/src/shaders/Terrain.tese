@@ -29,7 +29,7 @@ vec4 sampleHeightMap(vec4 position) {
     position.y = height * 10.0;
 
     float aMin = 0.01;
-    float aMax = 0.1;
+    float aMax = 0.2;
     float omega = 16; 
     float delta = 0.005;
 
