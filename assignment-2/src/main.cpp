@@ -13,6 +13,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <cmath>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
@@ -49,7 +50,7 @@ float verts[100*3];       //10x10 grid (100 vertices)
 GLushort elems[81*4];     //Element array for 9x9 = 81 quad patches
 
 glm::mat4 projView;
-glm::vec3 lightPosition(0, 40, 0);
+glm::vec3 lightPosition(0, 40, -45);
 
 Shader* terrianShader;
 
@@ -336,8 +337,22 @@ void keyboard_handler(unsigned char key, int x, int y) {
     glutPostRedisplay();
 }
 
+void updateLightPos(int tick) {
+    float minor = 40.0;
+    float major = 100.0;
+    int cycle = 1000;
+    float t = (float)tick/cycle * M_2PI;
+    if (t > M_PI) {
+        t = M_2PI - M_PI;
+    }
+    lightPosition.x = major * cos(t);
+    lightPosition.y = minor * sin(t);
+    cout << lightPosition.x << ", " << lightPosition.y << ", " << lightPosition.z << "\n";
+}
+
 void animate(int val) {
     tick++;
+    //updateLightPos(tick);
     glutTimerFunc(50, animate, val);
     glutPostRedisplay();
 

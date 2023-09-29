@@ -35,6 +35,8 @@ float mapNormalised(float value, float min1, float max1) {
      return (value - min1) / (max1 - min1);
 }
 
+
+
 void main() 
 {
      vec4 white = vec4(1.0);
