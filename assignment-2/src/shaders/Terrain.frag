@@ -7,6 +7,8 @@ in vec2 texCoords;
 in vec3 worldPosition;
 in vec3 N;
 
+out vec4 fragColor;
+
 uniform vec4 eyePos;
 uniform float waterHeight;
 uniform sampler2D grassTex;
@@ -63,9 +65,9 @@ void main()
      float s = smoothstep(-edge, edge, normalizedDepth);
      tex = s * mix(texture(waterTex, 2.0 * texCoords), white, waveHeight) + (1 - s) * groundColor;
 
-     gl_FragColor = ka * tex + diffuse(kd, L, N, tex);
+     fragColor = ka * tex + diffuse(kd, L, N, tex);
      if (normalizedDepth > 0) {
-          gl_FragColor += specular(ks, L, N, white);
+          fragColor += specular(ks, L, N, white);
      }
      
 }

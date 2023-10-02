@@ -12,7 +12,7 @@ out vec3 P;
 out float texIndex;
 
 float sampleHeightMap(vec3 position) {
-    float xMin = -45, xMax = +45, zMin = 0, zMax = -90;
+    float xMin = -45, xMax = 45, zMin = -45, zMax = 45;
     vec2 heightMapTexCoords = vec2(
         (position.x - xMin) / (xMax - xMin),
         (position.z - zMin) / (zMax - zMin)
@@ -27,7 +27,12 @@ float rand(vec4 p) {
 
 // Linearly map a range to the unit interval
 float mapNormalised(float value, float min1, float max1) {
-     return (value - min1) / (max1 - min1);
+    return (value - min1) / (max1 - min1);
+}
+
+// Linearly map one range to another
+float map(float value, float min1, float max1, float min2, float max2) {
+     return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
 
 float probFunc(float h, float hMin, float hMax) {
@@ -37,7 +42,7 @@ float probFunc(float h, float hMin, float hMax) {
 }
 
 void main() {
-    float spriteSize = 160;//96.0;
+    
     float epsilon = 0.15;
     float minSpriteHeight = 3;
     float maxSpriteHeight = 10;
@@ -59,6 +64,7 @@ void main() {
     if (h < minSpriteHeight || r > q) {
         vert = vec4(0.0, 0.0, 0.0, 1.0);
     }
+    float spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
     P = vec3(vert);
     texIndex = 5.0 * rand(vert.yzxw);
     vec4 posnC = mvpMatrix * vert;

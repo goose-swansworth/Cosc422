@@ -20,7 +20,7 @@ float exp_mix(float a, float b, float n, float x) {
 
 
 vec4 sampleHeightMap(vec4 position) {
-    float xMin = -45, xMax = +45, zMin = 0, zMax = -90;
+    float xMin = -45, xMax = +45, zMin = -45, zMax = 45;
     vec2 heightMapTexCoords = vec2(
         (position.x - xMin) / (xMax - xMin),
         (position.z - zMin) / (zMax - zMin)

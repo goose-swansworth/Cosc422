@@ -35,6 +35,7 @@ static glm::vec2 mouse_last;
 
 GLuint vaoID;
 GLuint spritePointsVAO;
+GLuint skyboxVAO;
 GLuint theProgram;
 GLuint mvpMatrixLoc, eyeLoc, zNear, zFar, waveTick, waterHeight;
 const unsigned int numTextures = 6;
@@ -53,18 +54,21 @@ glm::mat4 projView;
 glm::vec3 lightPosition(0, 40, -45);
 
 Shader* terrianShader;
-
 Shader* spriteShader;
+Shader* skyboxShader;
+
 const unsigned int nSprites = 150000;
 static const float xMin = -45;
 static const float xMax = 45;
-static const float zMin = -90;
-static const float zMax = 0;
+static const float zMin = -45;
+static const float zMax = 45;
 float spritePoints[nSprites * 3];
+
+unsigned int cubemapTexture;
 
 
 static const std::vector<std::string> texFilenames = {
-        "../textures/bays.tga",
+        "../textures/baysfilp.tga",
         "../textures/grass.tga",
         "../textures/water.tga",
         "../textures/sand.tga",
@@ -90,6 +94,60 @@ static const std::vector<std::string> texNames = {
         "tree5"
     };
 
+static vector<std::string> faces {
+    "../textures/skybox/right.jpg",
+    "../textures/skybox/left.jpg",
+    "../textures/skybox/top.jpg",
+    "../textures/skybox/bottom.jpg",
+    "../textures/skybox/front.jpg",
+    "../textures/skybox/back.jpg"
+};
+
+float skyboxVertices[] = {
+    // positions
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
+
 static std::vector<unsigned int> texWidths;
 static std::vector<unsigned int> texHeights;
 
@@ -103,9 +161,9 @@ void generateData()
         for(int j = 0; j < 10; j++)
         {
             indx = 10*i + j;
-            verts[3*indx] = 10*i - 45;      //x
+            verts[3*indx] = 10*i-45;      //x
             verts[3*indx+1] = 0;            //y
-            verts[3*indx+2] = -10*j;        //z
+            verts[3*indx+2] = -10*j+45;        //z
         }
     }
 
@@ -133,17 +191,34 @@ void loadTexture(const char* filename, int index, int glTexNum, unsigned int* wi
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     loadTGA(filename, width, height);
     cout << filename << ": (" << *width << ", " << *height << ")\n"; 
-    //int width, height, nChannels;
-    //unsigned char* imgData = stbi_load(filename, &width, &height, &nChannels, 0);
-    //if (imgData) {
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData);
-        ////glGenerateMipmap(GL_TEXTURE_2D);
-    //} else {
-        //cout << "Failed to load texture: " << filename << "\n";
-        //exit(1);
-    //}
-    //stbi_image_free(imgData);
+}
 
+void loadCubemap(vector<std::string> faces) {
+    glGenTextures(1, &cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 }
 
@@ -171,13 +246,19 @@ void populateSpriteArray(float points[], unsigned int nSprites) {
     }
 }
 
+void resizeSkybox() {
+    for (int i = 0; i < 108; i++) {
+        skyboxVertices[i] = 180 * skyboxVertices[i];
+    }
+}
 
 //Initialise the shader program, create and load buffer data
-void initialise()
-{
+void initialise() {
 //--------Load terrain height map-----------
     loadTextures();
     populateSpriteArray(spritePoints, nSprites);
+    loadCubemap(faces);
+    resizeSkybox();
 
     spriteShader = new Shader();
     spriteShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/sprite.vert");
@@ -192,9 +273,10 @@ void initialise()
     terrianShader->attachShader(GL_TESS_EVALUATION_SHADER, "../src/shaders/Terrain.tese");
     terrianShader->link();
 
-
-
-
+    skyboxShader = new Shader();
+    skyboxShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/skybox.vert");
+    skyboxShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/skybox.frag");
+    skyboxShader->link();
 
 //---------Load buffer data-----------------------
     generateData();
@@ -212,8 +294,6 @@ void initialise()
     glBindVertexArray(0);
     glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-    spriteShader->use();
-
     GLuint spritePointsVBO;
     glGenVertexArrays(1, &spritePointsVAO);
     glBindVertexArray(spritePointsVAO);
@@ -222,17 +302,33 @@ void initialise()
     glBufferData(GL_ARRAY_BUFFER, sizeof(spritePoints), spritePoints, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(0);
-    glBindVertexArray(1);
 
+    GLuint skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_POINT_SPRITE);
-	glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
     glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+}
+
+void updateViewProjMatrix(Camera viewer) {
+    glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
+    glm::vec3 look = viewer.position + viewer.fowards;
+    float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
+    glm::mat4 proj = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
+    glm::mat4 view = lookAt(glm::vec3(cameraPosn), look, glm::vec3(0.0, 1.0, 0.0)); //view matri
+    projView = proj * view;  //Product matrix
 }
 
 void drawTerrian() {
@@ -247,15 +343,8 @@ void drawTerrian() {
     terrianShader->setInt("zFar", 500);
     terrianShader->setFloat("waterHeight", waterLevelf);
     terrianShader->setInt("waveTick", tick);
-
     glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
-    glm::vec3 look = viewer.position + viewer.fowards;
     terrianShader->setVec3("eyePos", cameraPosn);
-
-    float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
-    glm::mat4 proj = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
-    glm::mat4 view = lookAt(viewer.position, look, glm::vec3(0.0, 1.0, 0.0)); //view matri
-    projView = proj * view;  //Product matrix
     terrianShader->setMat4("mvpMatrix", projView);
 
     glBindVertexArray(vaoID);
@@ -279,13 +368,28 @@ void drawSprites() {
 
 }
 
-//Display function to compute uniform values based on transformation parameters and to draw the scene
+void drawSkybox() {
+    skyboxShader->use();
+    skyboxShader->setMat4("mvpMatrix", projView);
+    skyboxShader->setInt("skybox", 0);
+    glDepthFunc(GL_LEQUAL);
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glDrawArrays(GL_TRIANGLES, 0, sizeof(skyboxVertices) / 3);
+    glDepthFunc(GL_LESS);
+
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+    updateViewProjMatrix(viewer);
+    
     drawTerrian();
     drawSprites();
+    drawSkybox();
 
     glutSwapBuffers();
 }
