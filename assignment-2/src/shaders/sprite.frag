@@ -1,14 +1,12 @@
 #version 330
 
 uniform sampler2D tree1;
-uniform float tree1Aspect;
 uniform sampler2D tree2;
-uniform float tree2Aspect;
 uniform sampler2D tree3;
-uniform float tree3Aspect;
 uniform sampler2D tree4;
-uniform float tree4Aspect;
 uniform vec3 lightPos;
+
+uniform float texAspects[5];
 
 in vec3 N;
 in vec3 P;
@@ -34,18 +32,15 @@ vec2 getTexCoords(float aspect) {
 
 void main() {
     float aspect;
-    vec2 texCoords;
-    if (texIndex < 1) {
-        texCoords = getTexCoords(tree1Aspect);
+    int i = int(texIndex) % 5;
+    vec2 texCoords = getTexCoords(texAspects[i]);
+    if (i == 0) {
         color = texture(tree1, texCoords);
-    } else if (texIndex >= 1 && texIndex < 2) {
-        texCoords = getTexCoords(tree2Aspect);
+    } else if (i == 1) {
         color = texture(tree2, texCoords);
-    } else if (texIndex >= 2 && texIndex < 3) {
-        texCoords = getTexCoords(tree3Aspect);
+    } else if (i == 2) {
         color = texture(tree3, texCoords);
-    } else if (texIndex >= 3 && texIndex < 4) {
-        texCoords = getTexCoords(tree4Aspect);
+    } else if (i == 3) {
         color = texture(tree4, texCoords);
     }
     // The ambient coeffient

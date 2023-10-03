@@ -63,6 +63,7 @@ static const float xMax = 45;
 static const float zMin = -45;
 static const float zMax = 45;
 float spritePoints[nSprites * 3];
+static const int nSpriteTextures = 5;
 
 unsigned int cubemapTexture;
 
@@ -148,8 +149,7 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-static std::vector<unsigned int> texWidths;
-static std::vector<unsigned int> texHeights;
+static std::vector<float> texAspects;
 
 //Generate vertex and element data for the terrain floor
 void generateData()
@@ -223,16 +223,15 @@ void loadCubemap(vector<std::string> faces) {
 }
 
 //Loads height map
-void loadTextures()
-{
+void loadTextures() {
     glGenTextures(texNames.size(), textureIds);
     unsigned int width, height;
     for (int i = 0; i < texNames.size(); i++) {
         loadTexture(texFilenames[i].c_str(), i, GL_TEXTURE0 + i, &width, &height);
-        texWidths.push_back(width);
-        texHeights.push_back(height);
+        if (i >= nSpriteTextures) {
+            texAspects.push_back((float)width / height);
+        }   
     }
-
 }
 
 void populateSpriteArray(float points[], unsigned int nSprites) {
@@ -360,8 +359,8 @@ void drawSprites() {
 
     for (int i = 0; i < texNames.size(); i++) {
         spriteShader->setInt(texNames[i], i);
-        spriteShader->setFloat(texNames[i] + "Aspect", (float)texWidths[i]/texHeights[i]);
     }
+    glUniform1fv(glGetUniformLocation(spriteShader->ID, "texAspects"), texAspects.size(), &texAspects[0]);
 
     glBindVertexArray(spritePointsVAO);
     glDrawArrays(GL_POINTS, 0, 3 * nSprites);

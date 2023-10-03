@@ -61,10 +61,12 @@ void main() {
     float q = probFunc(h, minSpriteHeight, maxSpriteHeight);
     // If the sprite is below the height threshold, or is not accepted remove it
     float r = rand(vert);
+    float spriteSize;
     if (h < minSpriteHeight || r > q) {
-        vert = vec4(0.0, 0.0, 0.0, 1.0);
+        spriteSize = 0;
+    } else {
+        spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
     }
-    float spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
     P = vec3(vert);
     texIndex = 5.0 * rand(vert.yzxw);
     vec4 posnC = mvpMatrix * vert;
