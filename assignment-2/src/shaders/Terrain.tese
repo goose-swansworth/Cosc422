@@ -4,6 +4,7 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform mat4 mvpMatrix;
 uniform sampler2D heightMap;
+uniform sampler2D mask;
 uniform int waveTick;
 uniform float waterHeight;
 
@@ -12,6 +13,7 @@ out vec3 worldPosition;
 out float normalizedDepth;
 out vec2 texCoords;
 out float waveHeight;
+out float roadMask;
 out vec3 N;
 
 float exp_mix(float a, float b, float n, float x) {
@@ -45,6 +47,15 @@ vec4 sampleHeightMap(vec4 position) {
     return position;
 }
 
+float sampleMask(vec4 position) {
+    float xMin = -45, xMax = +45, zMin = -45, zMax = 45;
+    vec2 heightMapTexCoords = vec2(
+        (position.x - xMin) / (xMax - xMin),
+        (position.z - zMin) / (zMax - zMin)
+    );
+    return texture(mask, heightMapTexCoords).r;
+}
+
 
 void main() {
     
@@ -71,10 +82,11 @@ void main() {
     float yW = sampleHeightMap(vert - vec4(epsilon, 0, 0, 0)).y;
 
     N = normalize(vec3(2*(yW - yE)*epsilon, 4*epsilon*epsilon, 2*(yN - yS)*epsilon));
+    roadMask = sampleMask(vert);
 
 
 
     
-    //gl_Position = vert;
+    // Output in clip coordinates
     gl_Position = mvpMatrix * vert;
 }

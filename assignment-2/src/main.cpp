@@ -23,6 +23,7 @@
 #include "camera.h"
 #include "shader.h"
 #include "stb_image.h"
+#include "model.h"
 using namespace std;
 
 #define WINDOW_WIDTH 1600
@@ -38,7 +39,7 @@ GLuint spritePointsVAO;
 GLuint skyboxVAO;
 GLuint theProgram;
 GLuint mvpMatrixLoc, eyeLoc, zNear, zFar, waveTick, waterHeight;
-const unsigned int numTextures = 6;
+const unsigned int numTextures = 11;
 GLuint textureIds[numTextures];
 float  eye_x = 0, eye_y = 20, eye_z = 30;      //Initial camera position
 float look_x = 0, look_y = 0, look_z = -40;    //"Look-at" point along -z direction
@@ -50,12 +51,16 @@ int tick = 0;
 float verts[100*3];       //10x10 grid (100 vertices)
 GLushort elems[81*4];     //Element array for 9x9 = 81 quad patches
 
+glm::mat4 projMatrix;
+glm::mat4 viewMatrix;
+glm::mat4 modelMatrix;
 glm::mat4 projView;
 glm::vec3 lightPosition(0, 40, -45);
 
 Shader* terrianShader;
 Shader* spriteShader;
 Shader* skyboxShader;
+Shader* modelShader;
 
 const unsigned int nSprites = 150000;
 static const float xMin = -45;
@@ -63,39 +68,50 @@ static const float xMax = 45;
 static const float zMin = -45;
 static const float zMax = 45;
 float spritePoints[nSprites * 3];
-static const int nSpriteTextures = 5;
+static const int iSpriteTextures = 7;
 
 unsigned int cubemapTexture;
 
+Model* model;
 
-static const std::vector<std::string> texFilenames = {
-        "../textures/baysfilp.tga",
+using namespace std;
+
+static const vector<string> terrianTexFilenames = {
+        "../textures/baysfliped3.tga",
+        "../textures/roadmask.tga",
         "../textures/grass.tga",
         "../textures/water.tga",
         "../textures/sand.tga",
         "../textures/browngrass.tga",
+        "../textures/road.tga"
+        
+};
+
+static const vector<string> spriteTexFilenames = {
         "../textures/pine.tga",
         "../textures/birtch.tga",
         "../textures/pine1.tga",
         "../textures/birtch1.tga",
-        "../textures/bush.tga"
-    };
+};
 
-
-static const std::vector<std::string> texNames = {
+static const vector<string> terrianTexNames = {
         "heightMap",
+        "mask",
         "grassTex",
         "waterTex",
         "sandTex",
         "brownGrassTex",
-        "tree1",
-        "tree2",
-        "tree3",
-        "tree4",
-        "tree5"
-    };
+        "roadTex"
+};
 
-static vector<std::string> faces {
+static const vector<string> spriteTexNames = {
+    "tree1",
+    "tree2",
+    "tree3",
+    "tree4"
+};
+
+static vector<string> faces {
     "../textures/skybox/right.jpg",
     "../textures/skybox/left.jpg",
     "../textures/skybox/top.jpg",
@@ -149,7 +165,7 @@ float skyboxVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-static std::vector<float> texAspects;
+static vector<float> texAspects;
 
 //Generate vertex and element data for the terrain floor
 void generateData()
@@ -193,7 +209,7 @@ void loadTexture(const char* filename, int index, int glTexNum, unsigned int* wi
     cout << filename << ": (" << *width << ", " << *height << ")\n"; 
 }
 
-void loadCubemap(vector<std::string> faces) {
+void loadCubemap(vector<string> faces) {
     glGenTextures(1, &cubemapTexture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
@@ -210,7 +226,7 @@ void loadCubemap(vector<std::string> faces) {
         }
         else
         {
-            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            cout << "Cubemap tex failed to load at path: " << faces[i] << endl;
             stbi_image_free(data);
         }
     }
@@ -224,13 +240,19 @@ void loadCubemap(vector<std::string> faces) {
 
 //Loads height map
 void loadTextures() {
-    glGenTextures(texNames.size(), textureIds);
+    glGenTextures(terrianTexNames.size() + spriteTexNames.size(), textureIds);
     unsigned int width, height;
-    for (int i = 0; i < texNames.size(); i++) {
-        loadTexture(texFilenames[i].c_str(), i, GL_TEXTURE0 + i, &width, &height);
-        if (i >= nSpriteTextures) {
-            texAspects.push_back((float)width / height);
-        }   
+    int k = 0;
+    // Load the terrian textures
+    for (int i = 0; i < terrianTexNames.size(); i++) {
+        loadTexture(terrianTexFilenames[i].c_str(), k, GL_TEXTURE0 + k, &width, &height);
+        k++;
+    }
+    // Load the sprite textures
+    for (int i = 0; i < spriteTexNames.size(); i++) {
+        loadTexture(spriteTexFilenames[i].c_str(), k, GL_TEXTURE0 + k, &width, &height);
+        texAspects.push_back((float)width / height);
+        k++;
     }
 }
 
@@ -251,9 +273,49 @@ void resizeSkybox() {
     }
 }
 
+void bufferTerrainPatches() {
+    generateData();
+    GLuint vboID[2];
+    glGenVertexArrays(1, &vaoID);
+    glBindVertexArray(vaoID);
+
+    glGenBuffers(2, vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);  // Vertex position
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
+    glBindVertexArray(0);
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+}
+
+void bufferSpriteData() {
+    GLuint spritePointsVBO;
+    glGenVertexArrays(1, &spritePointsVAO);
+    glBindVertexArray(spritePointsVAO);
+    glGenBuffers(1, &spritePointsVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, spritePointsVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(spritePoints), spritePoints, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+}
+
+void bufferSkyboxData() {
+    GLuint skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
+}
+
 //Initialise the shader program, create and load buffer data
 void initialise() {
-//--------Load terrain height map-----------
     loadTextures();
     populateSpriteArray(spritePoints, nSprites);
     loadCubemap(faces);
@@ -277,41 +339,16 @@ void initialise() {
     skyboxShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/skybox.frag");
     skyboxShader->link();
 
-//---------Load buffer data-----------------------
-    generateData();
-    GLuint vboID[2];
-    glGenVertexArrays(1, &vaoID);
-    glBindVertexArray(vaoID);
+    bufferTerrainPatches();
+    bufferSpriteData();
+    bufferSkyboxData();
 
-    glGenBuffers(2, vboID);
-    glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(0);  // Vertex position
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
-    glBindVertexArray(0);
-    glPatchParameteri(GL_PATCH_VERTICES, 4);
+    modelShader = new Shader();
+    modelShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/model.vert");
+    modelShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/model.frag");
+    modelShader->link();
 
-    GLuint spritePointsVBO;
-    glGenVertexArrays(1, &spritePointsVAO);
-    glBindVertexArray(spritePointsVAO);
-    glGenBuffers(1, &spritePointsVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, spritePointsVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(spritePoints), spritePoints, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(0);
-
-    GLuint skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glBindVertexArray(0);
+    model = new Model("../models/rock/rock.fbx");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -325,16 +362,18 @@ void updateViewProjMatrix(Camera viewer) {
     glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
     glm::vec3 look = viewer.position + viewer.fowards;
     float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
-    glm::mat4 proj = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
-    glm::mat4 view = lookAt(glm::vec3(cameraPosn), look, glm::vec3(0.0, 1.0, 0.0)); //view matri
-    projView = proj * view;  //Product matrix
+    glm::mat4 projMatrix = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
+    glm::mat4 viewMatrix = lookAt(glm::vec3(cameraPosn), look, glm::vec3(0.0, 1.0, 0.0)); //view matri
+    projView = projMatrix * viewMatrix;  //Product matrix
 }
 
 void drawTerrian() {
     terrianShader->use();
 
-    for (int i = 0; i < texNames.size(); i++) {
-        terrianShader->setInt(texNames[i], i);
+    for (int i = 0; i < terrianTexNames.size(); i++) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        terrianShader->setInt(terrianTexNames[i], i);
+        glBindTexture(GL_TEXTURE_2D, textureIds[i]);
     }
 
     terrianShader->setVec3("lightPos", lightPosition);
@@ -357,11 +396,17 @@ void drawSprites() {
     spriteShader->setFloat("offset", lightPosition.x);
     spriteShader->setVec3("lightPos", lightPosition);
 
-    for (int i = 0; i < texNames.size(); i++) {
-        spriteShader->setInt(texNames[i], i);
+    // Send the height map to the sprite shader
+    glActiveTexture(GL_TEXTURE0);
+    spriteShader->setInt(terrianTexNames[0], 0);
+    glBindTexture(GL_TEXTURE_2D, textureIds[0]);
+    // Send the sprite textures to the sprite shader (+1 offset because of height map)
+    for (int i = 0; i < spriteTexNames.size(); i++) {
+        glActiveTexture(GL_TEXTURE0 + i + 1);
+        spriteShader->setInt(spriteTexNames[i], i + 1);
+        glBindTexture(GL_TEXTURE_2D, textureIds[terrianTexNames.size() + i]);
     }
     glUniform1fv(glGetUniformLocation(spriteShader->ID, "texAspects"), texAspects.size(), &texAspects[0]);
-
     glBindVertexArray(spritePointsVAO);
     glDrawArrays(GL_POINTS, 0, 3 * nSprites);
 
@@ -380,15 +425,28 @@ void drawSkybox() {
 
 }
 
+void drawModel() {
+    modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 3.0f, 0.0f));
+    //modelMatrix = glm::scale(modelMatrix, 0.0005f * glm::vec3(1.0f));
+    modelShader->use();
+    modelShader->setMat4("mvpMatrix", projView * modelMatrix);
+    modelShader->setVec3("lightPos", lightPosition);
+    model->Draw(*modelShader);
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     updateViewProjMatrix(viewer);
     
+    
     drawTerrian();
     drawSprites();
     drawSkybox();
+    drawModel();
+    
 
     glutSwapBuffers();
 }

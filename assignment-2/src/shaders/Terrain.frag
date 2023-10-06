@@ -6,6 +6,7 @@ in float normalizedDepth;
 in vec2 texCoords;
 in vec3 worldPosition;
 in vec3 N;
+in float roadMask;
 
 out vec4 fragColor;
 
@@ -15,6 +16,7 @@ uniform sampler2D grassTex;
 uniform sampler2D waterTex;
 uniform sampler2D sandTex;
 uniform sampler2D brownGrassTex;
+uniform sampler2D roadTex;
 uniform vec3 lightPos;
 
 vec4 diffuse(float kd, vec3 L, vec3 N, vec4 color) {
@@ -61,6 +63,7 @@ void main()
                mapNormalised(worldPosition.y, sandHeight, 10)
           );
      }
+     //groundColor = mix(groundColor, texture(roadTex, 3*texCoords), roadMask);
      float edge = 0.1;
      float s = smoothstep(-edge, edge, normalizedDepth);
      tex = s * mix(texture(waterTex, 2.0 * texCoords), white, waveHeight) + (1 - s) * groundColor;
