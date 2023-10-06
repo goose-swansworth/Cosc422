@@ -8,16 +8,13 @@ out vec3 N;
 out vec3 P;
 out vec2 texCoords;
 
-uniform mat4 mvpMatrix;
+uniform mat4 projViewMatrix;
+uniform mat4 modelMatrix;
 
 void main()
 {
-    vec3 p = position;
-    if (p.y <= 0) {
-        p = vec3(0, 0, 0);
-    }
-    P = p;
+    P = vec3(modelMatrix * vec4(position, 1.0));
     N = normal;
     texCoords = vertexTexCoords;
-    gl_Position = mvpMatrix * vec4(p, 1.0);
+    gl_Position = projViewMatrix * modelMatrix * vec4(position, 1.0);
 }  

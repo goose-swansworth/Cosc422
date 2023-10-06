@@ -18,4 +18,5 @@ void main()
     vec4 color = texture(texture_diffuse1, texCoords);
     float ka = 0.3;
     FragColor = ka * color + diffuse(1 - ka, L, N, color);
+   
 }

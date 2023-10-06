@@ -348,7 +348,7 @@ void initialise() {
     modelShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/model.frag");
     modelShader->link();
 
-    model = new Model("../models/rock/rock.fbx");
+    model = new Model("../models/KukuisBoat/ev0421_sm_yacht_yacht.dae");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -356,6 +356,9 @@ void initialise() {
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_PROGRAM_POINT_SIZE);
     glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void updateViewProjMatrix(Camera viewer) {
@@ -390,6 +393,7 @@ void drawTerrian() {
 }
 
 void drawSprites() {
+    glEnable(GL_BLEND);
     spriteShader->use();
     spriteShader->setMat4("mvpMatrix", projView);
     spriteShader->setFloat("treeHeight", 7.0);
@@ -409,6 +413,7 @@ void drawSprites() {
     glUniform1fv(glGetUniformLocation(spriteShader->ID, "texAspects"), texAspects.size(), &texAspects[0]);
     glBindVertexArray(spritePointsVAO);
     glDrawArrays(GL_POINTS, 0, 3 * nSprites);
+    glDisable(GL_BLEND);
 
 }
 
@@ -426,13 +431,16 @@ void drawSkybox() {
 }
 
 void drawModel() {
+    glEnable(GL_BLEND);
     modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 3.0f, 0.0f));
-    //modelMatrix = glm::scale(modelMatrix, 0.0005f * glm::vec3(1.0f));
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 10.0f, 0.0f));
+    modelMatrix = glm::scale(modelMatrix,0.005f * glm::vec3(1.0f));
     modelShader->use();
-    modelShader->setMat4("mvpMatrix", projView * modelMatrix);
+    modelShader->setMat4("projViewMatrix", projView);
+    modelShader->setMat4("modelMatrix", modelMatrix);
     modelShader->setVec3("lightPos", lightPosition);
     model->Draw(*modelShader);
+    glDisable(GL_BLEND);
 }
 
 void display() {
@@ -441,10 +449,9 @@ void display() {
 
     updateViewProjMatrix(viewer);
     
-    
+    drawSkybox();
     drawTerrian();
     drawSprites();
-    drawSkybox();
     drawModel();
     
 
