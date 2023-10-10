@@ -13,7 +13,7 @@ vec4 diffuse(float kd, vec3 L, vec3 N, vec4 color) {
 }
 
 void main()
-{    
+{  
     vec3 L = normalize(lightPos - P);
     vec4 color = texture(texture_diffuse1, texCoords);
     float ka = 0.3;

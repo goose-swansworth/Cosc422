@@ -68,7 +68,7 @@ void main() {
         spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
     }
     P = vec3(vert);
-    texIndex = 5.0 * rand(vert.yzxw);
+    texIndex = 100.0 * rand(vert.yzxw);
     vec4 posnC = mvpMatrix * vert;
     gl_PointSize = (1.0 - posnC.z / posnC.w) * spriteSize;
     gl_Position = posnC;

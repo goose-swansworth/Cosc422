@@ -61,18 +61,26 @@ Shader* terrianShader;
 Shader* spriteShader;
 Shader* skyboxShader;
 Shader* modelShader;
+Shader* imposterShader;
+unsigned int frameBuffer;
+unsigned int renderBuffer;
+unsigned int imposterTexture;
 
 const unsigned int nSprites = 150000;
+const unsigned int nRocks = 1000;
 static const float xMin = -45;
 static const float xMax = 45;
 static const float zMin = -45;
 static const float zMax = 45;
 float spritePoints[nSprites * 3];
+float rockPoints[nRocks * 3];
+unsigned int imposterSpritesVAO;
 static const int iSpriteTextures = 7;
 
 unsigned int cubemapTexture;
 
 Model* model;
+Model* rock;
 
 using namespace std;
 
@@ -254,6 +262,7 @@ void loadTextures() {
         texAspects.push_back((float)width / height);
         k++;
     }
+    texAspects.push_back((float)WINDOW_WIDTH / WINDOW_HEIGHT);
 }
 
 void populateSpriteArray(float points[], unsigned int nSprites) {
@@ -301,6 +310,17 @@ void bufferSpriteData() {
     glEnableVertexAttribArray(0);
 }
 
+void bufferImposterData() {
+    GLuint imposterSpritesVBO;
+    glGenVertexArrays(1, &imposterSpritesVAO);
+    glBindVertexArray(imposterSpritesVAO);
+    glGenBuffers(1, &imposterSpritesVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, imposterSpritesVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rockPoints), rockPoints, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+}
+
 void bufferSkyboxData() {
     GLuint skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -314,10 +334,31 @@ void bufferSkyboxData() {
     glBindVertexArray(0);
 }
 
+void prepareFrameBuffer() {
+    glGenTextures(1, &imposterTexture);
+    glBindTexture(GL_TEXTURE_2D, imposterTexture);
+    glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, imposterTexture, 0);
+
+    glGenRenderbuffers(1, &renderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) { cout << "FBO Error!" << endl; }
+    
+}
+
 //Initialise the shader program, create and load buffer data
 void initialise() {
     loadTextures();
     populateSpriteArray(spritePoints, nSprites);
+    populateSpriteArray(rockPoints, nRocks);
     loadCubemap(faces);
     resizeSkybox();
 
@@ -341,29 +382,39 @@ void initialise() {
 
     bufferTerrainPatches();
     bufferSpriteData();
+    bufferImposterData();
     bufferSkyboxData();
+    prepareFrameBuffer();
 
     modelShader = new Shader();
     modelShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/model.vert");
     modelShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/model.frag");
     modelShader->link();
 
+    imposterShader = new Shader();
+    imposterShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/imposter.vert");
+    imposterShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/imposter.frag");
+    imposterShader->link();
+
+
+
     model = new Model("../models/KukuisBoat/ev0421_sm_yacht_yacht.dae");
+    rock = new Model("../models/rock1/Rock1.obj");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_PROGRAM_POINT_SIZE);
     glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 
     
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void updateViewProjMatrix(Camera viewer) {
-    glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
-    glm::vec3 look = viewer.position + viewer.fowards;
+void updateViewProjMatrix(glm::vec3 position, glm::vec3 look) {
+    glm::vec4 cameraPosn = glm::vec4(position, 1.0);
+    //glm::vec3 look = viewer.position + viewer.fowards;
     float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
     glm::mat4 projMatrix = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
     glm::mat4 viewMatrix = lookAt(glm::vec3(cameraPosn), look, glm::vec3(0.0, 1.0, 0.0)); //view matri
@@ -410,6 +461,7 @@ void drawSprites() {
         spriteShader->setInt(spriteTexNames[i], i + 1);
         glBindTexture(GL_TEXTURE_2D, textureIds[terrianTexNames.size() + i]);
     }
+
     glUniform1fv(glGetUniformLocation(spriteShader->ID, "texAspects"), texAspects.size(), &texAspects[0]);
     glBindVertexArray(spritePointsVAO);
     glDrawArrays(GL_POINTS, 0, 3 * nSprites);
@@ -431,10 +483,10 @@ void drawSkybox() {
 }
 
 void drawModel() {
-    glEnable(GL_BLEND);
+    //glEnable(GL_BLEND);
     modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 10.0f, 0.0f));
-    modelMatrix = glm::scale(modelMatrix,0.005f * glm::vec3(1.0f));
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(10.0f, 2.25f, 10.0f));
+    modelMatrix = glm::scale(modelMatrix,0.001f * glm::vec3(1.0f));
     modelShader->use();
     modelShader->setMat4("projViewMatrix", projView);
     modelShader->setMat4("modelMatrix", modelMatrix);
@@ -443,17 +495,42 @@ void drawModel() {
     glDisable(GL_BLEND);
 }
 
+void drawImposters() {
+    modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::scale(modelMatrix, 0.5f * glm::vec3(1.0f));
+    updateViewProjMatrix(-5.0f*viewer.fowards, glm::vec3(0));
+    imposterShader->use();
+    imposterShader->setInt("pass", 0);
+    imposterShader->setMat4("projViewMatrix", projView);
+    imposterShader->setMat4("modelMatrix", modelMatrix);
+    imposterShader->setVec3("lightPos", glm::vec3(-5.0f*viewer.fowards) + glm::vec3(0, 10, 0));
+    // Render imposter texture
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, drawBuffers);
+    rock->Draw(*imposterShader);
+    glFlush();
+    // Draw the imposter sprites
+    imposterShader->setInt("pass", 1);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindVertexArray(imposterSpritesVAO);
+    glDrawArrays(GL_POINTS, 0, nRocks);
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    updateViewProjMatrix(viewer);
+    drawImposters();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
     
     drawSkybox();
     drawTerrian();
     drawSprites();
     drawModel();
-    
 
     glutSwapBuffers();
 }
