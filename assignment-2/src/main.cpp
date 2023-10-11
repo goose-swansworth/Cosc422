@@ -67,7 +67,7 @@ unsigned int renderBuffer;
 unsigned int imposterTexture;
 
 const unsigned int nSprites = 150000;
-const unsigned int nRocks = 1000;
+const unsigned int nRocks = 150000;
 static const float xMin = -45;
 static const float xMax = 45;
 static const float zMin = -45;
@@ -409,7 +409,7 @@ void initialise() {
     glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 
     
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void updateViewProjMatrix(glm::vec3 position, glm::vec3 look) {
@@ -444,7 +444,7 @@ void drawTerrian() {
 }
 
 void drawSprites() {
-    glEnable(GL_BLEND);
+    //glEnable(GL_BLEND);
     spriteShader->use();
     spriteShader->setMat4("mvpMatrix", projView);
     spriteShader->setFloat("treeHeight", 7.0);
@@ -483,7 +483,7 @@ void drawSkybox() {
 }
 
 void drawModel() {
-    //glEnable(GL_BLEND);
+    glEnable(GL_BLEND);
     modelMatrix = glm::mat4(1.0f);
     modelMatrix = glm::translate(modelMatrix, glm::vec3(10.0f, 2.25f, 10.0f));
     modelMatrix = glm::scale(modelMatrix,0.001f * glm::vec3(1.0f));
@@ -511,7 +511,20 @@ void drawImposters() {
     rock->Draw(*imposterShader);
     glFlush();
     // Draw the imposter sprites
+    updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
+    imposterShader->setMat4("projViewMatrix", projView);
     imposterShader->setInt("pass", 1);
+    imposterShader->setInt("aspect", (float)WINDOW_WIDTH / WINDOW_HEIGHT);
+
+    glActiveTexture(GL_TEXTURE0);
+    imposterShader->setInt("imposterTex", 0);
+    glBindTexture(GL_TEXTURE_2D, imposterTexture);
+
+    glActiveTexture(GL_TEXTURE1);
+    imposterShader->setInt("heightMap", 1);
+    glBindTexture(GL_TEXTURE_2D, textureIds[0]);
+
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(imposterSpritesVAO);
     glDrawArrays(GL_POINTS, 0, nRocks);
@@ -521,7 +534,7 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    drawImposters();
+    
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -531,6 +544,7 @@ void display() {
     drawTerrian();
     drawSprites();
     drawModel();
+    drawImposters();
 
     glutSwapBuffers();
 }

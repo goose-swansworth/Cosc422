@@ -7,14 +7,17 @@ out vec3 TexCoords;
 out vec3 N;
 out vec3 P;
 out vec2 texCoords;
+out float yPos;
 
 uniform mat4 projViewMatrix;
 uniform mat4 modelMatrix;
 
 void main()
 {
+    
     P = vec3(modelMatrix * vec4(position, 1.0));
     N = normal;
     texCoords = vertexTexCoords;
     gl_Position = projViewMatrix * modelMatrix * vec4(position, 1.0);
+    yPos = (modelMatrix * vec4(position, 1.0)).y;
 }  
