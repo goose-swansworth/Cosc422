@@ -510,6 +510,7 @@ void drawImposters() {
     glDrawBuffers(1, drawBuffers);
     rock->Draw(*imposterShader);
     glFlush();
+    
     // Draw the imposter sprites
     updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
     imposterShader->setMat4("projViewMatrix", projView);
@@ -534,18 +535,15 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
     
     drawSkybox();
     drawTerrian();
+    drawImposters();
     drawSprites();
     drawModel();
-    drawImposters();
-
+    
     glutSwapBuffers();
 }
 

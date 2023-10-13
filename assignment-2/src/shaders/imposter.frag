@@ -39,7 +39,7 @@ void passOne() {
 }
 
 void passTwo() {
-    vec2 texCoords = getTexCoords(1);
+    vec2 texCoords = getTexCoords(1.8);
     vec4 color = texture(imposterTex, texCoords);
     if (dot(color.rgb, vec3(1.0)) < 0.01) {
         discard;
