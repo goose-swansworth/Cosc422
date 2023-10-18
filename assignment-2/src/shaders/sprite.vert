@@ -65,7 +65,7 @@ void main() {
     if (h < minSpriteHeight || r > q) {
         spriteSize = 0;
     } else {
-        spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
+        spriteSize = 16000 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
     }
     P = vec3(vert);
     texIndex = 100.0 * rand(vert.yzxw);

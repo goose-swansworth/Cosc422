@@ -34,6 +34,8 @@ public:
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
+    glm::vec3 average = glm::vec3(0);
+    int totalVertices = 0;
 
     // constructor, expects a filepath to a 3D model.
     Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
@@ -66,6 +68,8 @@ private:
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
+       // average = (float)1 / totalVertices * average ;
+       // cout << "Models average position: " << average.x << ", " << average.y << ", " << average.z << "\n";
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
@@ -93,6 +97,8 @@ private:
         vector<Vertex> vertices;
         vector<unsigned int> indices;
         vector<Texture> textures;
+        
+
 
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -104,6 +110,7 @@ private:
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
+            //average += vector;
             // normals
             if (mesh->HasNormals())
             {
@@ -136,6 +143,7 @@ private:
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
             vertices.push_back(vertex);
+            //totalVertices += 1;
         }
         // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
         for(unsigned int i = 0; i < mesh->mNumFaces; i++)
@@ -236,6 +244,7 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
+        std::cout << "Texture loaded at path: " << path << std::endl;
     }
     else
     {

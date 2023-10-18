@@ -8,6 +8,7 @@ out vec3 N;
 out vec3 P;
 out vec2 texCoords;
 out float shouldDiscard;
+out float texIndex;
 
 uniform mat4 projViewMatrix;
 uniform mat4 modelMatrix;
@@ -39,9 +40,10 @@ float map(float value, float min1, float max1, float min2, float max2) {
 }
 
 float probFunc(float h, float hMin, float hMax) {
-    float m = (hMax - hMin) / 2;
-    float d = 1 - abs(h - m - hMin) / m;
-    return clamp(pow(d, 1.5), 0, 1);
+    // float m = (hMax - hMin) / 2;
+    // float d = 1 - abs(h - m - hMin) / m;
+    // return clamp(pow(d, 2), 0, 1);
+    return mapNormalised(h, hMin, hMax);
 }
 
 void passOne() {
@@ -58,8 +60,8 @@ void passOne() {
 
 void passTwo() {
     float epsilon = 0.15;
-    float minSpriteHeight = 5;
-    float maxSpriteHeight = 10;
+    float minSpriteHeight = 3;
+    float maxSpriteHeight = 11;
     float h = sampleHeightMap(position);
 
     // Compute the surface normal for lighting
@@ -70,7 +72,7 @@ void passTwo() {
     N = normalize(vec3(2*(yW - yE)*epsilon, 4*epsilon*epsilon, 2*(yN - yS)*epsilon));
     
 
-    vec4 vert = vec4(position.x, h + 0.26, position.z, 1.0);
+    vec4 vert = vec4(position.x, h + 0.05, position.z, 1.0);
     // The probability the sprite will be accepted, increases linearly with height
     float q = probFunc(h, minSpriteHeight, maxSpriteHeight);
     // If the sprite is below the height threshold, or is not accepted remove it
@@ -79,9 +81,10 @@ void passTwo() {
     if (h < minSpriteHeight || r > q) {
         spriteSize = 0;
     } else {
-        spriteSize = 160 * map(rand(vert.zwxy), 0, 1, 0.75, 1.5);
+        spriteSize = 16000 * map(rand(vert.zwxy), 0, 1, 0.75, 2);
     }
     P = vec3(vert);
+    texIndex = 100.0 * rand(vert.yzxw);
     vec4 posnC = projViewMatrix * vert;
     gl_PointSize = (1.0 - posnC.z / posnC.w) * spriteSize;
     gl_Position = posnC;

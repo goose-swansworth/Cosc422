@@ -5,10 +5,18 @@ in vec3 N;
 in vec3 P;
 in vec2 texCoords;
 in float shouldDiscard;
+in float texIndex;
 
 uniform vec3 lightPos;
 uniform sampler2D texture_diffuse1;
-uniform sampler2D imposterTex;
+uniform sampler2D imposterTex0;
+uniform sampler2D imposterTex1;
+uniform sampler2D imposterTex2;
+uniform sampler2D imposterTex3;
+uniform sampler2D imposterTex4;
+uniform sampler2D imposterTex5;
+uniform sampler2D imposterTex6;
+uniform sampler2D imposterTex7;
 uniform int pass;
 uniform float aspect;
 
@@ -40,11 +48,31 @@ void passOne() {
 
 void passTwo() {
     vec2 texCoords = getTexCoords(1.8);
-    vec4 color = texture(imposterTex, texCoords);
+    vec4 color;
+    int i = int(texIndex) % 8;
+    if (i == 0) {
+        color = texture(imposterTex0, texCoords);
+    } else if (i == 1) {
+        color = texture(imposterTex1, texCoords);
+    } else if (i == 2) {
+        color = texture(imposterTex2, texCoords);
+    } else if (i == 3) {
+        color = texture(imposterTex3, texCoords);
+    } else if (i == 4) {
+        color = texture(imposterTex4, texCoords);
+    } else if (i == 5) {
+        color = texture(imposterTex5, texCoords);
+    } else if (i == 6) {
+        color = texture(imposterTex6, texCoords);
+    } else if (i == 7) {
+        color = texture(imposterTex7, texCoords);
+    }
     if (dot(color.rgb, vec3(1.0)) < 0.01) {
         discard;
     }
-    FragColor = color;
+    float ka = 0.4;
+    vec3 L = normalize(lightPos - P);
+    FragColor = ka * color + diffuse(1 - ka, L, N, color);
 
 }
 

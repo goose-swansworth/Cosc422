@@ -1,0 +1,83 @@
+# Blender MTL File: 'RadioTower.blend'
+# Material Count: 7
+
+newmtl Antennas
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.833092 0.871333 0.752095
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Foot
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump Textures/ConcreteFoot/TexturesCom_Concrete_WW2_2x2_1K_normal.tif
+map_Kd Textures/ConcreteFoot/TexturesCom_Concrete_WW2_2x2_1K_albedo.tif
+map_Ns Textures/ConcreteFoot/TexturesCom_Concrete_WW2_2x2_1K_roughness.tif
+
+newmtl Grid
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/Grid/Grid_Color.png
+map_Ns Textures/Grid/Grid_Roughness.png
+map_d Textures/Grid/Grid_Alpha.png
+refl Textures/Grid/Grid_Metal.png
+
+newmtl Ladder_-_Columns_-_X_cross
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/Ladder-Colums-X cross/Ladder_Color.png
+map_Ns Textures/Ladder-Colums-X cross/Ladder_Roughness.png
+refl Textures/Ladder-Colums-X cross/Ladder_Metal.png
+
+newmtl Lamp
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 50.000000 0.199258 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl None
+Ns 500
+Ka 0.8 0.8 0.8
+Kd 0.8 0.8 0.8
+Ks 0.8 0.8 0.8
+d 1
+illum 2
+
+newmtl Tower
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/Tower/Tower_Color.png
+map_Ns Textures/Tower/Tower_Roughness.png
+refl Textures/Tower/Tower_Metal.png

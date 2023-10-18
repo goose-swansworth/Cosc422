@@ -18,6 +18,7 @@
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/gtc/random.hpp>
 #include "loadTGA.h"
 #include "camera.h"
@@ -56,6 +57,7 @@ glm::mat4 viewMatrix;
 glm::mat4 modelMatrix;
 glm::mat4 projView;
 glm::vec3 lightPosition(0, 40, -45);
+glm::vec2 circleCenter(-2.25977, 7.41198);
 
 Shader* terrianShader;
 Shader* spriteShader;
@@ -64,10 +66,10 @@ Shader* modelShader;
 Shader* imposterShader;
 unsigned int frameBuffer;
 unsigned int renderBuffer;
-unsigned int imposterTexture;
+unsigned int imposterTextures[8];
 
 const unsigned int nSprites = 150000;
-const unsigned int nRocks = 150000;
+const unsigned int nRocks = 50000;
 static const float xMin = -45;
 static const float xMax = 45;
 static const float zMin = -45;
@@ -78,11 +80,14 @@ unsigned int imposterSpritesVAO;
 static const int iSpriteTextures = 7;
 
 unsigned int cubemapTexture;
+static bool lineFlag = false;
 
 Model* model;
-Model* rock;
+Model* tower;
+static glm::vec3 towerPosition = glm::vec3(27, 9.25,19);
 
 using namespace std;
+vector<Model> rockModels;
 
 static const vector<string> terrianTexFilenames = {
         "../textures/baysfliped3.tga",
@@ -211,8 +216,14 @@ void loadTexture(const char* filename, int index, int glTexNum, unsigned int* wi
     glBindTexture(GL_TEXTURE_2D, textureIds[index]);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    if (index == 0) {
+        // Clamp the height map texture to edge
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
     loadTGA(filename, width, height);
     cout << filename << ": (" << *width << ", " << *height << ")\n"; 
 }
@@ -335,15 +346,17 @@ void bufferSkyboxData() {
 }
 
 void prepareFrameBuffer() {
-    glGenTextures(1, &imposterTexture);
-    glBindTexture(GL_TEXTURE_2D, imposterTexture);
-    glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glGenTextures(8, imposterTextures);
+    for (int i = 0; i < 8; i++) {
+        glBindTexture(GL_TEXTURE_2D, imposterTextures[i]);
+        glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
 
     glGenFramebuffers(1, &frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, imposterTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, imposterTextures[0], 0);
 
     glGenRenderbuffers(1, &renderBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
@@ -371,7 +384,7 @@ void initialise() {
     terrianShader = new Shader();
     terrianShader->attachShader(GL_VERTEX_SHADER, "../src/shaders/Terrain.vert");
     terrianShader->attachShader(GL_FRAGMENT_SHADER, "../src/shaders/Terrain.frag");
-    terrianShader->attachShader(GL_TESS_CONTROL_SHADER, "../src/shaders/Terrain.cont");
+    terrianShader->attachShader(GL_TESS_CONTROL_SHADER, "../src/shaders/Terrain.tesc");
     terrianShader->attachShader(GL_TESS_EVALUATION_SHADER, "../src/shaders/Terrain.tese");
     terrianShader->link();
 
@@ -399,7 +412,9 @@ void initialise() {
 
 
     model = new Model("../models/KukuisBoat/ev0421_sm_yacht_yacht.dae");
-    rock = new Model("../models/rock1/Rock1.obj");
+    tower = new Model("../models/tower/RadioTower.obj");
+    rockModels.push_back(Model("../models/rock1/Rock1.obj"));
+    rockModels.push_back(Model("../models/rock/rock.fbx"));
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -416,7 +431,7 @@ void updateViewProjMatrix(glm::vec3 position, glm::vec3 look) {
     glm::vec4 cameraPosn = glm::vec4(position, 1.0);
     //glm::vec3 look = viewer.position + viewer.fowards;
     float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
-    glm::mat4 projMatrix = glm::perspective(80.0f * toRad, aspect, 1.0f, 500.0f);  //perspective projection matrix
+    glm::mat4 projMatrix = glm::perspective(80.0f * toRad, aspect, 0.01f, 500.0f);  //perspective projection matrix
     glm::mat4 viewMatrix = lookAt(glm::vec3(cameraPosn), look, glm::vec3(0.0, 1.0, 0.0)); //view matri
     projView = projMatrix * viewMatrix;  //Product matrix
 }
@@ -436,7 +451,7 @@ void drawTerrian() {
     terrianShader->setFloat("waterHeight", waterLevelf);
     terrianShader->setInt("waveTick", tick);
     glm::vec4 cameraPosn = glm::vec4(viewer.position, 1.0);
-    terrianShader->setVec3("eyePos", cameraPosn);
+    terrianShader->setVec4("eyePos", cameraPosn);
     terrianShader->setMat4("mvpMatrix", projView);
 
     glBindVertexArray(vaoID);
@@ -484,56 +499,92 @@ void drawSkybox() {
 
 void drawModel() {
     glEnable(GL_BLEND);
-    modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(10.0f, 2.25f, 10.0f));
-    modelMatrix = glm::scale(modelMatrix,0.001f * glm::vec3(1.0f));
+    glm::mat4 boatModelMatrix = glm::mat4(1.0f);
+    boatModelMatrix = glm::translate(boatModelMatrix, glm::vec3(10.0f, 2.25f, 10.0f));
+    boatModelMatrix = glm::scale(boatModelMatrix, 0.001f * glm::vec3(1.0f));
+    glm::mat4 towerModelMatrix = glm::mat4(1.0f);
+    towerModelMatrix = glm::translate(towerModelMatrix, towerPosition);
+    towerModelMatrix = glm::scale(towerModelMatrix, 0.1f * glm::vec3(1.0f));
     modelShader->use();
     modelShader->setMat4("projViewMatrix", projView);
-    modelShader->setMat4("modelMatrix", modelMatrix);
+    modelShader->setMat4("modelMatrix", boatModelMatrix);
     modelShader->setVec3("lightPos", lightPosition);
     model->Draw(*modelShader);
+    modelShader->setMat4("modelMatrix", towerModelMatrix);
+    tower->Draw(*modelShader);
     glDisable(GL_BLEND);
 }
 
 void drawImposters() {
     modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::scale(modelMatrix, 0.5f * glm::vec3(1.0f));
-    updateViewProjMatrix(-5.0f*viewer.fowards, glm::vec3(0));
+    //modelMatrix = glm::scale(modelMatrix, 0.5f * glm::vec3(1.0f));
+    glm::mat4 rotate90 = glm::rotate(90.0f, glm::vec3(0, 1, 0));
+    updateViewProjMatrix(-6.0f*viewer.fowards, glm::vec3(0));
     imposterShader->use();
     imposterShader->setInt("pass", 0);
     imposterShader->setMat4("projViewMatrix", projView);
-    imposterShader->setMat4("modelMatrix", modelMatrix);
     imposterShader->setVec3("lightPos", glm::vec3(-5.0f*viewer.fowards) + glm::vec3(0, 10, 0));
-    // Render imposter texture
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, drawBuffers);
-    rock->Draw(*imposterShader);
-    glFlush();
+    glm::mat4 modelRotation = glm::mat4(1.0f);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    glm::mat4 M;
+    for (int i = 0; i < rockModels.size(); i++) {
+        M = glm::mat4(1.0f);
+        if (i < 1) {
+            // The first rock model requires a scaling
+            M = glm::scale(M, 0.5f * glm::vec3(1.0f));
+        } else {
+            // The second requires a translation to the orgin
+            M = glm::translate(M, -glm::vec3(-10.0958, 0.802082, 1.19187));
+        }
+        // Create 4 different views of each rock
+        for (int j = 0; j < 4; j++) {
+            //cout << 4 * i + j << "\n";
+            imposterShader->setMat4("modelMatrix", M);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, imposterTextures[4 * i + j], 0);
+            glDrawBuffers(1, drawBuffers);
+            rockModels[i].Draw(*imposterShader);
+            M = M * rotate90;
+            glFlush();
+        }
+    }
+ 
     
-    // Draw the imposter sprites
+    //Draw the imposter sprites
     updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
     imposterShader->setMat4("projViewMatrix", projView);
     imposterShader->setInt("pass", 1);
     imposterShader->setInt("aspect", (float)WINDOW_WIDTH / WINDOW_HEIGHT);
+    imposterShader->setVec3("lightPos", lightPosition);
 
+    // Send the height map to the shader for normals
     glActiveTexture(GL_TEXTURE0);
-    imposterShader->setInt("imposterTex", 0);
-    glBindTexture(GL_TEXTURE_2D, imposterTexture);
-
-    glActiveTexture(GL_TEXTURE1);
-    imposterShader->setInt("heightMap", 1);
+    imposterShader->setInt("heightMap", 0);
     glBindTexture(GL_TEXTURE_2D, textureIds[0]);
 
+    // Send the imposter textrues
+    for (int i = 0; i < 8; i++) {
+        glActiveTexture(GL_TEXTURE1 + i);
+        imposterShader->setInt(("imposterTex" + to_string(i)).c_str(), i + 1);
+        glBindTexture(GL_TEXTURE_2D, imposterTextures[i]);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(imposterSpritesVAO);
     glDrawArrays(GL_POINTS, 0, nRocks);
+
+    // Clear the textures
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    for (int i = 0; i < 8; i++) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, imposterTextures[i], 0);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, lineFlag ? GL_LINE : GL_FILL);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     updateViewProjMatrix(viewer.position, viewer.position + viewer.fowards);
@@ -551,11 +602,11 @@ void special(int key, int x, int y)
 {
     int step = 0;
     float dir_x, dir_z;
-    if (key == GLUT_KEY_LEFT) lightPosition.x += 1;   //in radians
-    else if (key == GLUT_KEY_RIGHT) lightPosition.x -= 1;
-    else if (key == GLUT_KEY_DOWN) lightPosition.x -= 0.01;
-    else if (key == GLUT_KEY_UP) lightPosition.x += 0.01;
-    cout << lightPosition.x << ", " << viewer.position.y << ", " << viewer.position.z << "\n";
+    if (key == GLUT_KEY_LEFT) towerPosition.y += 0.1;   //in radians
+    else if (key == GLUT_KEY_RIGHT) towerPosition.y -= 0.1;
+    else if (key == GLUT_KEY_DOWN) towerPosition.z += 1;
+    else if (key == GLUT_KEY_UP) towerPosition.z -= 1;
+    cout << towerPosition.x << ", " << towerPosition.y << ", " << towerPosition.z << "\n";
     terrianShader->setVec3("lightPos", lightPosition);
     glutPostRedisplay();
 }
@@ -589,30 +640,32 @@ void keyboard_handler(unsigned char key, int x, int y) {
             break;
         case 'q':
             exit(0);
+            break;
+        case 'f':
+            lineFlag = !lineFlag;
+            break;
     }
     viewer.move(dir);
     glutPostRedisplay();
 }
 
-void updateLightPos(int tick) {
-    float minor = 40.0;
-    float major = 100.0;
-    int cycle = 1000;
+void updateCamPos(int tick) {
+    float minor = 8;
+    float major = 5.5;
+    float r = 5;
+    int cycle = 8000;
     float t = (float)tick/cycle * M_2PI;
-    if (t > M_PI) {
-        t = M_2PI - M_PI;
-    }
-    lightPosition.x = major * cos(t);
-    lightPosition.y = minor * sin(t);
-    cout << lightPosition.x << ", " << lightPosition.y << ", " << lightPosition.z << "\n";
+    viewer.position.x = minor * cos(t) + circleCenter.x;
+    viewer.position.z = major * sin(t) + circleCenter.y;
+    tick++;
+    glutTimerFunc(10, updateCamPos, tick);
 }
 
 void animate(int val) {
     tick++;
-    //updateLightPos(tick);
+    //updateCamPos(tick);
     glutTimerFunc(50, animate, val);
     glutPostRedisplay();
-
 }
 
 int main(int argc, char** argv)
@@ -643,6 +696,7 @@ int main(int argc, char** argv)
     glutDisplayFunc(display);
     glutSpecialFunc(special);
     glutTimerFunc(50, animate, 0);
+    //glutTimerFunc(10, updateCamPos, 0);
     glutMainLoop();
     return 0;
 }
